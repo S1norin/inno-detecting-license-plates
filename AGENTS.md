@@ -47,10 +47,14 @@ Human-facing docs: `README.md`, `CONTRIBUTING.md`, `data/README.md`.
 
 - No decorative or aggressive delimiters in code or docs.
 - Keep comments and docstrings clean and minimal.
+- Separate logical blocks with blank lines: after imports, between
+  validation/setup/processing/output groups, and between phases inside loops
+  and functions. Ruff does not enforce this; keep it consistent manually.
 - Prefer small, scoped changes.
 - Lint with `uv run ruff check .` (config in `pyproject.toml`); keep it clean
   before committing. Notebook style rules are relaxed via per-file-ignores —
-  do not reformat the pipeline notebook, and keep its behavior unchanged.
+  readability edits (blank lines) are fine, but never change notebook
+  behavior.
 
 ## Useful references
 

@@ -32,6 +32,7 @@ def parse_name(name):
         raise ValueError('Not an image')
     if p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
         raise ValueError('Unsafe member path')
+
     parts = p.stem.split('-')
     if len(parts) != 7:
         raise ValueError('Not a labeled CCPD filename')
@@ -41,6 +42,7 @@ def parse_name(name):
     x2, y2 = map(int, b.split('&'))
     if not (0 <= x1 < x2 and 0 <= y1 < y2):
         raise ValueError('Invalid bounding box')
+
     indices = list(map(int, parts[4].split('_')))
     if len(indices) not in (7, 8):
         raise ValueError('Invalid plate length')
@@ -93,6 +95,7 @@ def scan(archive_path, output):
             raise ValueError('Metadata cache is incomplete. Choose a new --output directory.')
         print(f'Reused metadata for {len(rows):,} eligible images.', flush=True)
         return rows, info
+
     rows, seen, skipped = [], set(), Counter()
     scanned = 0
     last = time.monotonic()
@@ -114,6 +117,7 @@ def scan(archive_path, output):
             if time.monotonic() - last >= 15:
                 print(f'Read {scanned:,} file entries; eligible images: {len(rows):,}.', flush=True)
                 last = time.monotonic()
+
     rows.sort(key=lambda r: r['member'])
     info = {'archive': identity, 'valid_images': len(rows), 'skipped': dict(skipped)}
     write_csv(cache, rows, FIELDS)
@@ -130,6 +134,7 @@ def quantile_cuts(values):
 def select(rows, count, seed):
     if not 0 < count <= len(rows):
         raise ValueError(f'Requested {count} images; eligible population is {len(rows)}.')
+
     axes = ('plate_height', 'tilt_horizontal', 'tilt_vertical')
     cuts = {key: quantile_cuts([r[key] for r in rows]) for key in axes}
     groups = defaultdict(list)
@@ -137,11 +142,13 @@ def select(rows, count, seed):
         key = tuple(bisect.bisect_right(cuts[axis], row[axis]) for axis in axes)
         groups[key].append(row)
     keys = sorted(groups)
+
     # Integer largest-remainder allocation: exact total and no floating-point ties.
     quotas = {k: count * len(groups[k]) // len(rows) for k in keys}
     remainder_order = sorted(keys, key=lambda k: (-(count * len(groups[k]) % len(rows)), k))
     for key in remainder_order[:count - sum(quotas.values())]:
         quotas[key] += 1
+
     rng = random.Random(seed)
     selected, distribution = [], []
     for key in keys:
@@ -152,6 +159,7 @@ def select(rows, count, seed):
                              'population': len(groups[key]), 'selected': quotas[key],
                              'population_share': len(groups[key]) / len(rows),
                              'selected_share': quotas[key] / count})
+
     selected.sort(key=lambda r: r['member'])
     assert len(selected) == count and len({r['member'] for r in selected}) == count
     return selected, cuts, distribution
@@ -170,12 +178,14 @@ def extract(archive_path, output, selected):
                 continue
             if not member.isfile():
                 raise ValueError('Selected entry is not a regular file: ' + member.name)
+
             target = output / wanted[member.name]['image_relpath']
             target.parent.mkdir(parents=True, exist_ok=True)
             if not target.resolve().is_relative_to(output.resolve()):
                 raise ValueError('Unsafe output path: ' + str(target))
             if shutil.disk_usage(output).free < member.size + 512 * 2**20:
                 raise OSError('Less than required file size + 512 MiB free. Existing files preserved.')
+
             source = archive.extractfile(member)
             h = hashlib.sha256()
             if target.exists():
@@ -194,6 +204,7 @@ def extract(archive_path, output, selected):
                 if done == len(wanted):
                     break
                 continue
+
             with tempfile.NamedTemporaryFile(dir=target.parent, prefix=target.name + '.',
                                              suffix='.part', delete=False) as temp:
                 # Lambda is fully consumed within this iteration; no late binding.
@@ -202,11 +213,13 @@ def extract(archive_path, output, selected):
                     h.update(block)
                 temp_path = Path(temp.name)
             source.close()
+
             if temp_path.stat().st_size != member.size:
                 raise OSError('Incomplete extracted image: ' + str(temp_path))
             hashes[member.name] = h.hexdigest()
             # On Windows rename fails if another process created target; no overwrite.
             os.rename(temp_path, target)
+
             done += 1
             if time.monotonic() - last >= 15:
                 print(f'Selected images handled: {done:,}/{len(wanted):,}.', flush=True)
@@ -231,12 +244,14 @@ def main():
     args = parser.parse_args()
     if args.count <= 0:
         parser.error('--count must be positive')
+
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     config_path = output / 'selection_config.json'
     settings = {'archive': fingerprint(args.archive), 'count': args.count, 'seed': args.seed}
     if args.selection_manifest:
         settings['manifest_sha256'] = hashlib.sha256(args.selection_manifest.read_bytes()).hexdigest()
+
     if config_path.exists():
         previous = json.loads(config_path.read_text(encoding='utf-8'))
         if previous['settings'] != settings:
@@ -266,6 +281,7 @@ def main():
             print(f'Already complete: {args.count:,} selected images verified. {output}', flush=True)
             return
         raise ValueError('Completed subset has missing/changed files. Existing files preserved; choose a new --output.')
+
     if args.selection_manifest:
         with args.selection_manifest.open(encoding='utf-8-sig', newline='') as stream:
             saved = list(csv.DictReader(stream))
@@ -278,6 +294,7 @@ def main():
         rows, info = scan(args.archive, output)
         selected, cuts, distribution = select(rows, args.count, args.seed)
         population_size = len(rows)
+
     config_path.write_text(json.dumps({'settings': settings, 'population_images': population_size,
                                       'quartile_cutpoints': cuts,
                                       'method': 'proportional height x horizontal tilt x vertical tilt sampling'},
@@ -287,13 +304,16 @@ def main():
               ['stratum', 'population', 'selected', 'population_share', 'selected_share'])
     print(f'Selected {len(selected):,} images across {len(distribution)} nonempty strata; seed={args.seed}.',
           flush=True)
+
     if args.plan_only:
         print('Plan saved. Rerun without --plan-only to extract selected images.', flush=True)
         return
+
     hashes = extract(args.archive, output, selected)
     receipt = {'settings': settings, 'images': [{'image_relpath': r['image_relpath'],
                 'sha256': hashes[r['member']]} for r in selected]}
     completion.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding='utf-8')
+
     (output / 'images' / '.extraction_complete.json').write_text(
         json.dumps({'kind': 'selected_subset', 'images': len(selected), 'settings': settings}, indent=2),
         encoding='utf-8')

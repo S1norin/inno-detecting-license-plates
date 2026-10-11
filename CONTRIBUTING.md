@@ -60,6 +60,13 @@ covers setup and working agreements.
 - Put model code, configs, and short experiment notes in your `baseline/`
   subfolder, not in `data/`.
 
+## Code style
+
+- Separate logical blocks with blank lines: after imports, between
+  validation/setup/processing/output groups, and between phases inside loops
+  and functions. Ruff does not enforce this, so keep it consistent manually.
+- Keep comments and docstrings minimal; no decorative delimiters.
+
 ## Code quality
 
 Ruff is the project linter (config in `pyproject.toml`):

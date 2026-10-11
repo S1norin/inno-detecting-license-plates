@@ -17,6 +17,7 @@ def preprocess_plate(image, mode='none', rgb3=False):
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     else:
         raise ValueError('Expected grayscale or BGR 3-channel image')
+
     if mode == 'none':
         out = bgr.copy() if image.ndim == 3 else gray.copy()
     elif mode == 'gray_contrast':
@@ -25,6 +26,7 @@ def preprocess_plate(image, mode='none', rgb3=False):
         out = cv2.Canny(gray, threshold1=100, threshold2=200)
     else:
         raise ValueError('Unknown mode: '+str(mode))
+
     if rgb3:
         if out.ndim == 2:
             return cv2.cvtColor(out, cv2.COLOR_GRAY2RGB)
