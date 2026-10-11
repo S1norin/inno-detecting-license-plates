@@ -11,7 +11,7 @@ Human-facing docs: `README.md`, `CONTRIBUTING.md`, `data/README.md`.
 
 ## Environment
 
-- Python 3.10 in `.venv` (uv project; `.python-version` pins 3.10).
+- Python 3.12 in `.venv` (uv project; `.python-version` pins 3.12).
 - `data/requirements.txt` pins the exact package versions used to build the dataset.
 - Do not install packages or download files (datasets, archives, models) without
   asking the user first.

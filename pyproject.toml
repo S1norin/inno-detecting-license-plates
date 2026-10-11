@@ -3,5 +3,5 @@ name = "inno-detecting-license-plates"
 version = "0.1.0"
 description = "Detecting license plates"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = []

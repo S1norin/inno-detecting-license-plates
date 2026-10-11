@@ -8,7 +8,7 @@ covers setup and working agreements.
 
 1. Install the [git-lfs](https://git-lfs.com) client once: `git lfs install`
 2. Clone the repo (LFS source images pull automatically).
-3. Create the environment (Python 3.10 per `.python-version`; the dataset was
+3. Create the environment (Python 3.12 per `.python-version`; the dataset was
    originally built on 3.13, the notebook runs on either):
 
    ```bash
