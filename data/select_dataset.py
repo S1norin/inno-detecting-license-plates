@@ -45,13 +45,13 @@ def parse_name(name):
     if len(indices) not in (7, 8):
         raise ValueError('Invalid plate length')
     dictionaries = [PROVINCES, ALPHABETS] + [ADS] * (len(indices) - 2)
-    if any(not 0 <= i < len(d) for i, d in zip(indices, dictionaries)):
+    if any(not 0 <= i < len(d) for i, d in zip(indices, dictionaries, strict=False)):
         raise ValueError('Invalid character index')
-    text = ''.join(d[i] for i, d in zip(indices, dictionaries))
+    text = ''.join(d[i] for i, d in zip(indices, dictionaries, strict=False))
     if 'O' in text:
         raise ValueError('Missing-character placeholder in OCR annotation')
     return dict(zip(FIELDS, [name, y2 - y1, horizontal, vertical,
-                             x1, y1, x2, y2, text]))
+                             x1, y1, x2, y2, text], strict=False))
 
 
 def fingerprint(path):
@@ -179,7 +179,8 @@ def extract(archive_path, output, selected):
             source = archive.extractfile(member)
             h = hashlib.sha256()
             if target.exists():
-                for block in iter(lambda: source.read(1024 * 1024), b''):
+                # Lambda is fully consumed within this iteration; no late binding.
+                for block in iter(lambda: source.read(1024 * 1024), b''):  # noqa: B023
                     h.update(block)
                 source.close()
                 hashes[member.name] = h.hexdigest()
@@ -193,14 +194,16 @@ def extract(archive_path, output, selected):
                 if done == len(wanted):
                     break
                 continue
-            with tempfile.NamedTemporaryFile(dir=target.parent, prefix=target.name + '.', suffix='.part', delete=False) as temp:
-                for block in iter(lambda: source.read(1024 * 1024), b''):
+            with tempfile.NamedTemporaryFile(dir=target.parent, prefix=target.name + '.',
+                                             suffix='.part', delete=False) as temp:
+                # Lambda is fully consumed within this iteration; no late binding.
+                for block in iter(lambda: source.read(1024 * 1024), b''):  # noqa: B023
                     temp.write(block)
                     h.update(block)
                 temp_path = Path(temp.name)
             source.close()
             if temp_path.stat().st_size != member.size:
-                raise IOError('Incomplete extracted image: ' + str(temp_path))
+                raise OSError('Incomplete extracted image: ' + str(temp_path))
             hashes[member.name] = h.hexdigest()
             # On Windows rename fails if another process created target; no overwrite.
             os.rename(temp_path, target)
@@ -211,7 +214,7 @@ def extract(archive_path, output, selected):
             if done == len(wanted):
                 break
     if done != len(wanted):
-        raise IOError(f'Found only {done}/{len(wanted)} selected entries; completion marker not written.')
+        raise OSError(f'Found only {done}/{len(wanted)} selected entries; completion marker not written.')
     return hashes
 
 
@@ -223,7 +226,8 @@ def main():
     parser.add_argument('--count', type=int, default=5000)
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--plan-only', action='store_true', help='Save metadata/selection without extracting images.')
-    parser.add_argument('--selection-manifest', type=Path, help='Extract an exact saved selected_images.csv instead of sampling again.')
+    parser.add_argument('--selection-manifest', type=Path,
+                        help='Extract an exact saved selected_images.csv instead of sampling again.')
     args = parser.parse_args()
     if args.count <= 0:
         parser.error('--count must be positive')
@@ -275,12 +279,14 @@ def main():
         selected, cuts, distribution = select(rows, args.count, args.seed)
         population_size = len(rows)
     config_path.write_text(json.dumps({'settings': settings, 'population_images': population_size,
-                                      'quartile_cutpoints': cuts, 'method': 'proportional height x horizontal tilt x vertical tilt sampling'},
+                                      'quartile_cutpoints': cuts,
+                                      'method': 'proportional height x horizontal tilt x vertical tilt sampling'},
                                      ensure_ascii=False, indent=2), encoding='utf-8')
     write_csv(output / 'selected_images.csv', selected, FIELDS + ['stratum', 'image_relpath'])
     write_csv(output / 'sampling_distribution.csv', distribution,
               ['stratum', 'population', 'selected', 'population_share', 'selected_share'])
-    print(f'Selected {len(selected):,} images across {len(distribution)} nonempty strata; seed={args.seed}.', flush=True)
+    print(f'Selected {len(selected):,} images across {len(distribution)} nonempty strata; seed={args.seed}.',
+          flush=True)
     if args.plan_only:
         print('Plan saved. Rerun without --plan-only to extract selected images.', flush=True)
         return
@@ -292,7 +298,8 @@ def main():
         json.dumps({'kind': 'selected_subset', 'images': len(selected), 'settings': settings}, indent=2),
         encoding='utf-8')
     print(f'DONE: {len(selected):,} source images extracted and verified. Images root: {output / "images"}', flush=True)
-    print('No existing source dataset files were changed. This script does not create scale variants or splits.', flush=True)
+    print('No existing source dataset files were changed. '
+          'This script does not create scale variants or splits.', flush=True)
 
 
 if __name__ == '__main__':
@@ -300,4 +307,4 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print('\nInterrupted. Existing files preserved. Rerun the same command to resume.', flush=True)
-        raise SystemExit(130)
+        raise SystemExit(130) from None

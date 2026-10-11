@@ -60,6 +60,19 @@ covers setup and working agreements.
 - Put model code, configs, and short experiment notes in your `baseline/`
   subfolder, not in `data/`.
 
+## Code quality
+
+Ruff is the project linter (config in `pyproject.toml`):
+
+```bash
+uv sync             # installs dev tools (ruff) into .venv
+uv run ruff check .
+```
+
+Run this before committing. The pipeline notebook is linted with relaxed style
+rules (per-file-ignores) because it is a verified artifact in idiomatic
+notebook style; keep bug detectors (F/B rules) clean everywhere.
+
 ## Branches, commits, and pull requests
 
 `main` is always in a working state; do not push to it directly.

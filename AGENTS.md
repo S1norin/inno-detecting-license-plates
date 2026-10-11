@@ -48,6 +48,9 @@ Human-facing docs: `README.md`, `CONTRIBUTING.md`, `data/README.md`.
 - No decorative or aggressive delimiters in code or docs.
 - Keep comments and docstrings clean and minimal.
 - Prefer small, scoped changes.
+- Lint with `uv run ruff check .` (config in `pyproject.toml`); keep it clean
+  before committing. Notebook style rules are relaxed via per-file-ignores —
+  do not reformat the pipeline notebook, and keep its behavior unchanged.
 
 ## Useful references
 

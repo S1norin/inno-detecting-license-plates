@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 
+
 def preprocess_plate(image, mode='none', rgb3=False):
     # Input: BGR uint8 HxWx3 or grayscale uint8. Output: uint8, BGR/grayscale by default; RGB 3ch if rgb3=True.
     if image is None or image.size == 0:

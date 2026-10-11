@@ -5,3 +5,32 @@ description = "Detecting license plates"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
+
+[dependency-groups]
+dev = ["ruff"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# .agents holds third-party skill scaffolding; the two dataset copies are
+# generated from data/preprocessing.py (notebook MODULE_TEXT) and
+# data/configure_paths.py (shutil.copy2) and are kept in sync with those.
+extend-exclude = [".agents", "data/dataset/preprocessing.py", "data/dataset/configure_paths.py"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The pipeline notebook is a verified artifact written in idiomatic notebook
+# style: imports spread across cells, semicolons, re-imports, long strings.
+# Real bug detectors (undefined names, most of F/B) stay active.
+"*.ipynb" = ["B007", "B905", "E402", "E501", "E702", "F401", "F811", "I001",
+             "UP017", "UP024", "UP034"]
