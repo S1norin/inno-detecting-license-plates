@@ -1,0 +1,85 @@
+{
+  "settings": {
+    "archive": {
+      "path": "C:\\My\\Data\\Codex\\Anything\\CV\\CCPD2019.tar.xz",
+      "bytes": 13164924944,
+      "mtime_ns": 1589299206000000000,
+      "parser_version": 1
+    },
+    "count": 5000,
+    "seed": 42
+  },
+  "population_images": 351977,
+  "quartile_cutpoints": {
+    "plate_height": [
+      75,
+      96,
+      127
+    ],
+    "tilt_horizontal": [
+      9,
+      88,
+      90
+    ],
+    "tilt_vertical": [
+      12,
+      76,
+      88
+    ]
+  },
+  "method": "proportional height x horizontal tilt x vertical tilt sampling",
+  "duplicate_repair": {
+    "removed_from_selection": 8,
+    "same_stratum_replacements": [
+      {
+        "replaced_member": "CCPD2019/ccpd_challenge/0133-3_0-191&515_352&584-349&584_191&575_194&515_352&524-0_0_22_32_16_27_24-105-4.jpg",
+        "replacement_member": "CCPD2019/ccpd_challenge/0080-0_0-357&446_487&498-487&496_358&498_357&448_486&446-0_0_22_25_29_29_22-121-14.jpg",
+        "stratum": "0_0_0",
+        "sha256": "1f6bdd2356864547ff83965594c58b0715940cb6edc84e8dd6ccb0b0243efe6f"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_challenge/0296-0_0-227&515_472&616-472&616_228&616_227&515_471&515-0_0_23_7_27_27_27-165-5.jpg",
+        "replacement_member": "CCPD2019/ccpd_weather/0300-6_2-223&570_460&676-448&676_223&651_235&570_460&595-10_0_9_31_24_18_30-67-10.jpg",
+        "stratum": "2_0_0",
+        "sha256": "aa3262610e46f2a9477f81bf2c98f37a9b595117eef71569f3deb31da2806581"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_fn/0045-1_2-303&401_404&439-404&437_305&439_303&403_402&401-0_0_32_32_24_9_30-101-4.jpg",
+        "replacement_member": "CCPD2019/ccpd_blur/0053-0_6-257&351_367&392-367&392_261&391_257&351_363&352-0_0_16_30_30_33_13-88-2.jpg",
+        "stratum": "0_0_0",
+        "sha256": "2738b7e27bd1bff3c826a7425221d9cd99742da3e8d10fc9d0ebac8d8ec184f7"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_fn/0049-4_1-334&442_433&484-431&484_334&476_336&442_433&450-0_0_12_32_12_25_24-41-15.jpg",
+        "replacement_member": "CCPD2019/ccpd_fn/0046-3_1-275&449_374&488-374&482_278&488_275&455_371&449-0_0_28_20_29_29_33-90-23.jpg",
+        "stratum": "0_0_0",
+        "sha256": "4527ef18986063892510330b89ba0d39bbf7824523dd1b33682655748a46e42d"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_fn/1047-6_33-95&415_616&583-616&583_155&533_95&415_556&465-0_0_33_24_22_31_33-32-20.jpg",
+        "replacement_member": "CCPD2019/ccpd_db/0417-7_21-190&473_448&608-423&576_190&608_215&505_448&473-0_0_2_30_10_27_32-33-4.jpg",
+        "stratum": "3_0_1",
+        "sha256": "08144dff04ecfd350f92fe362a0b79a381175c435d4ebd6c3d9c2eea1d7445f9"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_tilt/0337-32_28-379&373_532&557-532&465_385&557_379&465_526&373-11_8_32_7_4_31_24-82-33.jpg",
+        "replacement_member": "CCPD2019/ccpd_rotate/0630-17_16-236&438_513&628-512&628_236&541_237&438_513&525-0_0_27_3_29_29_25-86-376.jpg",
+        "stratum": "3_1_1",
+        "sha256": "667e6d821199263f3b81a8ebbb456e784dff313c1b6d7aadf34cf7bef01bcfeb"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_tilt/0763-29_21-119&447_366&705-366&577_137&705_119&575_348&447-0_0_26_16_33_24_29-127-64.jpg",
+        "replacement_member": "CCPD2019/ccpd_fn/1148-26_41-181&370_514&658-474&514_181&658_221&514_514&370-0_0_25_3_24_33_27-45-95.jpg",
+        "stratum": "3_1_1",
+        "sha256": "070a78e8725c045ec3c44393ea584dcc77d483b24082541b5a3bee2e6bdbbfac"
+      },
+      {
+        "replaced_member": "CCPD2019/ccpd_tilt/0918-23_34-346&538_663&780-640&654_346&780_369&664_663&538-0_0_11_27_27_26_8-69-126.jpg",
+        "replacement_member": "CCPD2019/ccpd_weather/0777-13_23-193&447_516&648-494&576_193&648_215&519_516&447-0_0_5_16_25_26_24-84-72.jpg",
+        "stratum": "3_1_1",
+        "sha256": "da60230fcc70e0fc5f502ab23b578b57ba715a214621f1155a057e785a3a7aa8"
+      }
+    ],
+    "original_files_preserved": true
+  }
+}

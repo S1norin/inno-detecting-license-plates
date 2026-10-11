@@ -1,0 +1,13 @@
+{
+  "archive": {
+    "path": "C:\\My\\Data\\Codex\\Anything\\CV\\CCPD2019.tar.xz",
+    "bytes": 13164924944,
+    "mtime_ns": 1589299206000000000,
+    "parser_version": 1
+  },
+  "valid_images": 351977,
+  "skipped": {
+    "Not a labeled CCPD filename": 3036,
+    "Not an image": 11
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "source_images": 5000,
+  "unique_source_images": 5000,
+  "variants": 15000,
+  "original_split": {
+    "train": 3500,
+    "val": 700,
+    "test": 800
+  },
+  "copied_files_verified": 45000,
+  "source_checksums": "passed",
+  "parent_split_check": "passed",
+  "yolo_labels": "passed",
+  "local_paths": "passed"
+}

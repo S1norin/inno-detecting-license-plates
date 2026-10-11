@@ -1,0 +1,41 @@
+{
+  "source_dataset": "../source_data/images",
+  "created_at_utc": "2026-10-10T13:59:16.605834+00:00",
+  "seed": 42,
+  "n_originals": 5000,
+  "split_ratios": {
+    "train": 0.7,
+    "val": 0.14,
+    "test": 0.16
+  },
+  "n_splits_originals": {
+    "train": 3500,
+    "val": 700,
+    "test": 800
+  },
+  "scales": [
+    1.0,
+    0.75,
+    0.5
+  ],
+  "bucket_train_height_thresholds": {
+    "q33": 83.0,
+    "q67": 112.0
+  },
+  "n_variants": 15000,
+  "environment": {
+    "python": "3.13.1 (tags/v3.13.1:0671451, Dec  3 2024, 19:06:28) [MSC v.1942 64 bit (AMD64)]",
+    "packages": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.5",
+      "opencv-python-headless": "4.14.0.94",
+      "matplotlib": "3.11.1",
+      "PyYAML": "6.0.3",
+      "tqdm": "4.70.1",
+      "ipykernel": "7.3.0",
+      "nbformat": "5.11.1",
+      "nbclient": "0.11.0"
+    }
+  },
+  "data_export_seconds": 360.01229786872864
+}

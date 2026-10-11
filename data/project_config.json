@@ -1,0 +1,21 @@
+{
+  "included_source_images": 5000,
+  "unique_source_sha256": 5000,
+  "expected_original_split": {
+    "train": 3500,
+    "val": 700,
+    "test": 800
+  },
+  "expected_variants": 15000,
+  "scales": [
+    1.0,
+    0.75,
+    0.5
+  ],
+  "notebook": "Data_Preprocessing.ipynb",
+  "input": "source_data/images",
+  "default_output": "dataset",
+  "source_edition": "CCPD2019",
+  "seed": 42,
+  "duplicate_replacements": 8
+}

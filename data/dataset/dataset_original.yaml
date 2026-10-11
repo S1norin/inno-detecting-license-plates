@@ -1,0 +1,7 @@
+path: C:\My\Data\Codex\Anything\CV\CCPD_Data_Preprocessing\dataset
+train: lists_original/train.txt
+val: lists_original/val.txt
+test: lists_original/test.txt
+nc: 1
+names:
+  0: license_plate
