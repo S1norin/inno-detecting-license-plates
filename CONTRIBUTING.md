@@ -60,10 +60,52 @@ covers setup and working agreements.
 - Put model code, configs, and short experiment notes in your `baseline/`
   subfolder, not in `data/`.
 
-## Commits
+## Branches, commits, and pull requests
 
-- Work on a short-lived branch per model/experiment; merge to `main` when it
-  works.
-- Keep commits scoped: model code, data pipeline changes, and docs separately.
-- After any data pipeline change, rerun the notebook end-to-end; its Step 8
-  asserts are the dataset integrity checks.
+`main` is always in a working state; do not push to it directly.
+
+### Branches
+
+One short-lived branch per model, experiment, or fix, created from `main`.
+Name them `<type>/<kebab-case-description>`:
+
+| Prefix | Use for |
+|---|---|
+| `feat/` | New models, features, evaluation scripts |
+| `fix/` | Bug fixes |
+| `data/` | Data pipeline changes (notebook, preprocessing, selection) |
+| `docs/` | Documentation only |
+
+Examples: `feat/yolo11-baseline`, `fix/crop-path-case`, `data/clahe-params`.
+Delete the branch after merging.
+
+### Commits
+
+- Title line: imperative mood, `<type>: <summary>`, under 72 characters.
+  Types: `feat`, `fix`, `data`, `docs`, `chore`.
+- Body (optional): what changed and why, one point per line.
+- Keep commits scoped: model code, data pipeline changes, and docs in
+  separate commits/PRs.
+
+Examples:
+
+```
+feat: add YOLO11n baseline detector with training script
+fix: clamp scaled bboxes to image bounds in notebook export
+data: switch OCR baseline to original scale only
+docs: document size bucket thresholds in data README
+```
+
+### Pull requests
+
+- One focused change per PR; small is better.
+- Title follows the commit convention (`<type>: <summary>`).
+- Description covers:
+  - **What & why** — the change and its purpose.
+  - **How it was verified** — commands run, notebook rerun, checks passed.
+  - For data pipeline changes: state that `Data_Preprocessing.ipynb` was
+    rerun end-to-end and its Step 8 integrity asserts passed.
+  - For model changes: report validation metrics (test metrics only for
+    final results), with the config used.
+- Rebase on `main` before requesting review; merge only when the branch is in
+  a working state.

@@ -60,6 +60,18 @@ Human-facing docs: `README.md`, `CONTRIBUTING.md`, `data/README.md`.
 - `data/dataset/run_config.json` — parameters and exact environment of the
   last successful dataset build.
 
+## Branches, commits, pull requests
+
+- Do not push directly to `main`; work on a branch and open a PR.
+- Branch names: `feat/`, `fix/`, `data/`, `docs/` + kebab-case description
+  (e.g., `feat/yolo11-baseline`). Data pipeline changes use `data/`.
+- Commit titles: imperative, `<type>: <summary>` under 72 chars, types
+  `feat`/`fix`/`data`/`docs`/`chore`; scope model, data, and docs changes
+  separately.
+- PR descriptions must state how the change was verified; data pipeline
+  changes require a full notebook rerun with Step 8 asserts passing.
+- Full conventions: see `CONTRIBUTING.md`.
+
 ## When training or evaluating models
 
 - Detection: `data/dataset/dataset_original.yaml` for the primary
