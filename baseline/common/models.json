@@ -4,5 +4,25 @@
     "url": "https://huggingface.co/morsetechlab/yolov11-license-plate-detection/resolve/251a30d7daedca065f56e04b0af04052c907c68f/license-plate-finetune-v1s.pt",
     "filename": "license-plate-finetune-v1s.pt",
     "sha256": "95e50c25ab7066dd0ca5aec18fa80349676db08697780d1149576461174d2381"
+  },
+  {
+    "name": "easyocr-craft",
+    "url": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip",
+    "filename": "craft_mlt_25k.pth",
+    "sha256": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17",
+    "archive_member": "craft_mlt_25k.pth",
+    "archive_sha256": "8dc6a1c703a89ed56308ef742d26ebd45c656248cbbbda6e7fe60e569f873e65",
+    "cache_subdir": "easyocr",
+    "upstream_md5": "2f8227d2def4037cdb3b34389dcf9ec1"
+  },
+  {
+    "name": "easyocr-zh-sim-g2",
+    "url": "https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/zh_sim_g2.zip",
+    "filename": "zh_sim_g2.pth",
+    "sha256": "cb678fdef09d651e7763ca551ad790dc89f0b2e3d2a640484330e338fb574c7a",
+    "archive_member": "zh_sim_g2.pth",
+    "archive_sha256": "eed38bdd9e612bd150f13d2f70fd8e5b24c79c2e2fe621a02603b38d385503e9",
+    "cache_subdir": "easyocr",
+    "upstream_md5": "b601ce7143293387d3ec4f41a66edc07"
   }
 ]

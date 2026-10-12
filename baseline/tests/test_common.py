@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from zipfile import ZipFile
 
 from baseline.common import env, weights
 
@@ -112,6 +113,46 @@ class WeightTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 weights.verified_path("test", self.cache, self.manifest)
             request.assert_not_called()
+
+    def archive_manifest(self, *, expected_content=None):
+        content = io.BytesIO()
+        with ZipFile(content, "w") as archive:
+            archive.writestr("model.pt", self.content)
+            archive.writestr("../unwanted.txt", "must never be extracted")
+        payload = content.getvalue()
+        entry = json.loads(self.manifest.read_text())[0]
+        entry.update(archive_member="model.pt", archive_sha256=hashlib.sha256(payload).hexdigest(),
+                     cache_subdir="easyocr")
+        if expected_content is not None:
+            entry["sha256"] = hashlib.sha256(expected_content).hexdigest()
+        self.manifest.write_text(json.dumps([entry]))
+        return payload
+
+    def test_archive_and_extracted_weight_are_verified_in_stage_cache(self):
+        payload = self.archive_manifest()
+        with patch.object(weights, "urlopen", return_value=io.BytesIO(payload)) as request:
+            path = weights.fetch("test", self.cache, self.manifest)
+            self.assertEqual(path, self.cache / "easyocr/model.pt")
+            self.assertEqual(path.read_bytes(), self.content)
+            self.assertEqual(weights.fetch("test", self.cache, self.manifest), path)
+            request.assert_called_once()
+        self.assertEqual(list(self.cache.rglob("*.part")), [])
+        self.assertFalse((self.cache / "unwanted.txt").exists())
+
+    def test_wrong_extracted_digest_does_not_promote_archive(self):
+        payload = self.archive_manifest(expected_content=b"different weight")
+        with patch.object(weights, "urlopen", return_value=io.BytesIO(payload)), self.assertRaises(ValueError):
+            weights.fetch("test", self.cache, self.manifest)
+        self.assertEqual(list((self.cache / "easyocr").iterdir()), [])
+
+    def test_wrong_archive_digest_fails_before_extraction(self):
+        self.archive_manifest()
+        with (
+            patch.object(weights, "urlopen", return_value=io.BytesIO(b"corrupt archive")),
+            self.assertRaises(ValueError),
+        ):
+            weights.fetch("test", self.cache, self.manifest)
+        self.assertEqual(list((self.cache / "easyocr").iterdir()), [])
 
 
 if __name__ == "__main__":
