@@ -103,6 +103,62 @@ major limitation independently of YOLO. Canny has much lower coverage and
 character accuracy on validation. A future recognizer experiment must tune on
 train/validation; these frozen test outputs must not be reused to choose changes.
 
+## Follow-up validation diagnosis
+
+The very low OCR scores prompted an additional audit on validation only, after
+the frozen test report. These diagnostic variants do not replace the baseline,
+select a new test policy or rerun test. Only one pretrained OCR checkpoint was
+evaluated; these scores are not evidence that plate recognition models generally
+perform this poorly. No recognizer was fine-tuned on our training set.
+
+All 15,000 metadata labels match decoding their original CCPD filenames using
+the published CCPD character mapping. Visual inspection confirms the sampled
+crops contain their corresponding plates, including dark, blurred and tilted
+examples. Without any confidence rejection, the original 700 validation reads
+still contain only 3 exact plates, 22 reads within one edit, and character
+accuracy 0.3804. Only 51 first province characters and 15 last-six-character
+strings match. Therefore neither the confidence threshold nor the province
+character alone explains the failure.
+
+For an independent API comparison, `random.Random(42).sample(records, 100)`
+selects original-scale validation records from the stored OCR-only `none` cache.
+All variants use the same verified Chinese/English EasyOCR weights and CPU
+configuration. Native `readtext()` and `recognize()` use their default contrast
+retry, while the stored adapter disables it. Whole-crop variants use native
+`recognize()` without CRAFT region detection. Alphabet restrictions use only
+characters from `ocr_train.csv`. Rectification uses the four annotated CCPD
+corners in the filename and is an oracle geometry diagnostic, not an end-to-end
+method available from the detector's rectangular boxes.
+
+| Validation variant | Exact / 100 | Within one edit / 100 | Character accuracy |
+|---|---:|---:|---:|
+| Stored CTC adapter, no confidence rejection | 0 | 3 | 0.3846 |
+| Native EasyOCR `readtext()`, default contrast retry | 0 | 4 | 0.3921 |
+| Native recognition of the entire GT crop | 0 | 2 | 0.3530 |
+| Entire GT crop, training alphabet restriction | 0 | 4 | 0.4005 |
+| GT-corner rectification, entire crop | 0 | 1 | 0.3828 |
+| GT-corner rectification, training alphabet restriction | 0 | 6 | 0.4341 |
+
+Character accuracy here includes every raw read and no threshold, unlike the
+confidence-filtered baseline tables. Native and stored adapter text matches on
+79 of these 100 samples, so the adapter is not numerically interchangeable with
+the public API; nevertheless the native API independently reproduces the low
+recognition quality. Bypassing CRAFT, restricting the vocabulary or correcting
+perspective does not restore whole-plate recognition in this audit. This rules
+out those individual changes as sufficient fixes, rather than proving every
+possible implementation or data issue absent.
+
+The evidence points to poor transfer of this general OCR checkpoint to these
+plate crops; blur, lighting and geometry can contribute, but their individual
+effects have not been isolated. A separately trained or plate-specific
+recognizer is the next experiment to evaluate on train/validation. Its quality
+cannot be inferred from model popularity or promised before measurement.
+See the upstream [EasyOCR implementation](https://github.com/JaidedAI/EasyOCR)
+and [CCPD annotation specification](https://github.com/detectRecog/CCPD#dataset-annotations).
+Local diagnostic details and sample-level reads are in
+`baseline/ocr/results/diagnostics/val_comparison.json`; frozen test artifacts
+remain unchanged.
+
 ## Runtime, weights and adapter
 
 Python 3.12.14; EasyOCR 1.7.2; torch 2.6.0+cpu; torchvision 0.21.0+cpu;
