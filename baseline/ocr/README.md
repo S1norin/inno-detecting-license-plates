@@ -1,16 +1,18 @@
 # Recognition baseline
 
-Work for issues #6 and #7. All new code lives under `baseline/ocr/`, apart
-from `baseline/requirements-ocr.txt`. No detector, shared environment or
-dataset pipeline files are changed. See [INTEGRATION.md](INTEGRATION.md)
-for the exact inputs needed from issues #4 and #5.
+Work for issues #6 and #7. The local OCR branch now includes the infrastructure
+and detector from PRs #8 and #9. OCR additions live under `baseline/ocr/`, apart
+from `baseline/requirements-ocr.txt`. See [INTEGRATION.md](INTEGRATION.md)
+for the remaining runtime inputs needed to run both protocols.
 
 ## Current verification
 
-The dependency-free tests cover hand-computed recognition metrics, CTC
+The 21 dependency-free OCR tests cover hand-computed recognition metrics, CTC
 decoding, validation selection, cache resume, hash mismatches, missing
 detections, crop clamping, training vocabulary and test-run guards.
 The committed `charset.json` is generated from the actual `ocr_train.csv`.
+Integration tests read the detector's native `provenance`/`images` schema,
+preserve its inference settings and reject wrong split/metadata inputs.
 
 Real EasyOCR inference, preprocessing ablations and final dataset metrics
 have **not** been run yet. A fresh clone contains LFS pointers for the source
@@ -46,15 +48,23 @@ Use `--scale 1.0` to export originals only; OCR evaluation defaults to originals
 
 Use the `.venv-baseline` provided by #4, separate from the data environment.
 Obtain permission before installing packages or downloading weights, per
-`AGENTS.md`. Once the shared environment is ready, add our pinned dependencies:
+`AGENTS.md`. Inspect requirements without installing anything:
 
 ```bash
-uv pip install --python .venv-baseline/bin/python -r baseline/requirements-ocr.txt
+python -m baseline.ocr.setup
 ```
 
-EasyOCR also needs a compatible torch/torchvision pair, OpenCV, NumPy, Pillow
-and its other dependencies. Resolve that pair with the owner of #4; this branch
-does not choose a competing torch version. `matplotlib` is only needed to plot.
+After installation is approved, create/update the shared environment:
+
+```bash
+python -m baseline.ocr.setup --install
+```
+
+Setup combines the detector and OCR requirements into one constrained install
+and rejects conflicting pins. It retains #4's torch 2.6.0+cpu / torchvision
+0.21.0+cpu pair, NumPy 2.1.3 and matplotlib 3.10.3. EasyOCR's additional
+dependencies are resolved within those constraints. `matplotlib` is only needed
+to plot. The setup command without `--install` remains read-only.
 
 Place `craft_mlt_25k.pth` and `zh_sim_g2.pth` in `baseline/weights/easyocr/`.
 Their **actual, pinned SHA-256 values** must be in `baseline/common/models.json`.
@@ -77,9 +87,9 @@ done
 ```
 
 For end-to-end, repeat with `--protocol end_to_end`, add
-`--predictions baseline/detection/results/RUN/predictions_val_ocr.json`, and
-use a separate output folder. The interchange format is in INTEGRATION.md.
-It can be produced from the detector's saved predictions without rerunning it.
+`--predictions baseline/detection/results/RUN/predictions_val.json`, and
+use a separate output folder. #5's native saved results are accepted directly;
+no conversion or detector rerun is needed when that file is available.
 
 Each raw file contains every selected image, decoded text and one CTC
 probability per character, GT text, size bucket, status, input-image hash,
