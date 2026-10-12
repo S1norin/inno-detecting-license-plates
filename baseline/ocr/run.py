@@ -44,7 +44,9 @@ def run_inference(args, engine):
     if args.protocol == "end_to_end":
         if not args.predictions:
             raise ValueError("End-to-end inference requires --predictions")
-        detector, predictions = end_to_end.load_predictions(args.predictions, samples)
+        detector, predictions = end_to_end.load_predictions(
+            args.predictions, samples, split=args.split, metadata_sha256=digest(args.dataset / "metadata.csv")
+        )
 
     metadata = {
         "protocol": args.protocol,
