@@ -2,7 +2,8 @@
 
 The OCR branch includes Max's infrastructure commit `340f17f6` from PR #8 and
 detector commit `d99a428f` from PR #9. The local merge had no conflicts.
-The OCR PR should target `feat/yolo11-detection-baseline` (PR #9).
+The OCR [PR #10](https://github.com/S1norin/inno-detecting-license-plates/pull/10)
+targets `feat/yolo11-detection-baseline` (PR #9).
 Merge #8, then #9; retarget the OCR PR to `main` before its final merge.
 The local integration did not merge or modify Max's remote PRs.
 
