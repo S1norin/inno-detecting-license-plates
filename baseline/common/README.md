@@ -15,7 +15,8 @@ mismatched exact pins from `baseline/requirements-detection.txt`. The second
 command is a no-op. Use `--requirements /path/to/stage-requirements.txt` for
 another stage. Keep shared package versions compatible across stage files.
 Existing environments with a different Python minor version fail explicitly.
-The pinned CPU stack supports Windows and Linux on x86-64.
+The pinned CPU stack supports macOS (PyPI CPU build) and Windows/Linux (PyTorch
+CPU index) via `sys_platform` markers in the requirements file.
 
 `models.json` is an array of `{name, url, filename, sha256}` entries. Use immutable
 download URLs and verify published SHA-256 digests independently when adding

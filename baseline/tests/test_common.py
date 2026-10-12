@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,6 +18,19 @@ class EnvironmentTests(unittest.TestCase):
             self.assertEqual(env.read_pins(requirements), {"torch": "2.6.0+cpu", "pyyaml": "6.0.2"})
             requirements.write_text("torch>=2\n")
             with self.assertRaisesRegex(ValueError, "exact"):
+                env.read_pins(requirements)
+
+    def test_platform_markers_select_active_pins(self):
+        with tempfile.TemporaryDirectory() as folder:
+            requirements = Path(folder) / "requirements.txt"
+            requirements.write_text(
+                'torch==2.6.0+cpu; sys_platform != "darwin"\n'
+                'torch==2.6.0; sys_platform == "darwin"\n'
+                "numpy==2.1.3\n")
+            expected_torch = "2.6.0" if sys.platform == "darwin" else "2.6.0+cpu"
+            self.assertEqual(env.read_pins(requirements), {"torch": expected_torch, "numpy": "2.1.3"})
+            requirements.write_text('torch==2.6.0; python_version > "3"\n')
+            with self.assertRaisesRegex(ValueError, "Unsupported marker"):
                 env.read_pins(requirements)
 
     def test_installs_only_changed_pins_then_noop(self):

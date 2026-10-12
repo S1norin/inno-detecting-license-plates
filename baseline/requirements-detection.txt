@@ -1,6 +1,10 @@
 # CPU stack for Python 3.12. env.py supplies the PyTorch CPU index.
-torch==2.6.0+cpu
-torchvision==0.21.0+cpu
+# The CPU index publishes +cpu wheels for Linux and Windows only; on macOS
+# the PyPI build is used, which is CPU-only.
+torch==2.6.0+cpu; sys_platform != "darwin"
+torch==2.6.0; sys_platform == "darwin"
+torchvision==0.21.0+cpu; sys_platform != "darwin"
+torchvision==0.21.0; sys_platform == "darwin"
 ultralytics==8.3.162
 opencv-python-headless==4.11.0.86
 # Ultralytics declares opencv-python; keep its cv2 wheel at the same version.

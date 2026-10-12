@@ -17,22 +17,36 @@ def interpreter(venv=VENV):
     return Path(venv) / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
 
 
+def active_marker(marker):
+    match = re.fullmatch(r'sys_platform\s*(!=|==)\s*["\']([a-z0-9_]+)["\']', marker)
+    if not match:
+        raise ValueError(f"Unsupported marker (expected sys_platform ==/!=): {marker!r}")
+    operator, value = match.groups()
+    return sys.platform == value if operator == "==" else sys.platform != value
+
+
 def read_pins(requirements):
-    pins = {}
+    entries = {}
     for line in Path(requirements).read_text(encoding="utf-8").splitlines():
         line = line.partition("#")[0].strip()
         if not line:
             continue
-        match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+!-]+)", line)
+        match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+!-]+)(?:\s*;\s*(.+))?", line)
         if not match:
             raise ValueError(f"Expected an exact name==version pin: {line}")
-        name, version = match.groups()
+        name, version, marker = match.groups()
         name = re.sub(r"[-_.]+", "-", name).lower()
-        if name in pins:
-            raise ValueError(f"Duplicate pin: {name}")
-        pins[name] = version
+        active = True if marker is None else active_marker(marker)
+        entries.setdefault(name, []).append((version, active))
+    pins = {}
+    for name, versions in entries.items():
+        active = [version for version, is_active in versions if is_active]
+        if len(active) > 1:
+            raise ValueError(f"Conflicting active pins for {name}: {active}")
+        if active:
+            pins[name] = active[0]
     if not pins:
-        raise ValueError("Requirements file has no pins")
+        raise ValueError("Requirements file has no active pins")
     return pins
 
 
