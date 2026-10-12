@@ -12,3 +12,6 @@ data/dataset/crops_gt/
 .venv-baseline/
 baseline/weights/
 baseline/detection/results/
+
+# Local copy of the prepared Telegram dataset archive
+CCPD_Data_Preprocessing.zip
