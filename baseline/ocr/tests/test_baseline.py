@@ -13,7 +13,7 @@ from baseline.ocr.confidence import accepts, plate_score, sweep
 from baseline.ocr.ctc import decode_greedy
 from baseline.ocr.end_to_end import load_predictions, select_box
 from baseline.ocr.engine import WEIGHT_FILES, EasyOCREngine, verify_weights
-from baseline.ocr.evaluate import evaluate_test, model_contract, select_validation
+from baseline.ocr.evaluate import evaluate_test, evaluate_validation, model_contract, select_validation
 from baseline.ocr.export_train import export_training
 from baseline.ocr.io import digest, load_samples, validate_raw, write_json
 from baseline.ocr.metrics import edit_distance, evaluate
@@ -121,6 +121,16 @@ class SelectionTests(unittest.TestCase):
             select_validation([self.cache(raw(split="test"))])
         with self.assertRaises(ValueError):
             select_validation([self.cache(raw())])
+
+    def test_validation_report_has_traceability_and_binds_to_selected_cache(self):
+        paths = [self.cache(raw(mode)) for mode in ("none", "gray_contrast", "canny")]
+        selection = select_validation(paths)
+        report = evaluate_validation(raw(), selection, digest(paths[0]))
+        self.assertEqual(report["metadata"]["split"], "val")
+        self.assertEqual(report["metadata"]["tau"], 0.5)
+        self.assertTrue(report["metadata"]["selected_mode"])
+        with self.assertRaises(ValueError):
+            evaluate_validation(raw(), selection, "d" * 64)
 
     def test_reject_mixed_validation_samples(self):
         paths = [self.cache(raw(mode)) for mode in ("none", "gray_contrast")]
