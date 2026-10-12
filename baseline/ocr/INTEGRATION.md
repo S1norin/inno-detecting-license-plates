@@ -1,90 +1,72 @@
-# Inputs needed from #4 and #5
+# Local integration of #4/#5 with #6/#7
 
-This branch can be merged alongside the detector branch: it introduces only
-`baseline/ocr/**` and `baseline/requirements-ocr.txt`. It does not implement or
-modify `baseline/common/`, detection, shared requirements or the dataset.
+The OCR branch includes Max's infrastructure commit `340f17f6` from PR #8 and
+detector commit `d99a428f` from PR #9. The local merge had no conflicts.
+No remote PR was merged or updated; the OCR branch remains local.
 
-## Shared environment and weights (#4)
+## Environment (#4)
 
-Use one `.venv-baseline` and agree on the torch/torchvision pair before adding
-`baseline/requirements-ocr.txt`. The OCR code never installs dependencies.
+`python -m baseline.ocr.setup` inspects the environment without installing.
+After permission, `python -m baseline.ocr.setup --install` reuses the shared
+environment installer with the union of detection and OCR pins. It rejects
+version conflicts and preserves torch 2.6.0+cpu, torchvision 0.21.0+cpu,
+NumPy 2.1.3, OpenCV 4.11.0.86 and matplotlib 3.10.3. EasyOCR is 1.7.2.
 
-Two EasyOCR files are required:
+## EasyOCR weights still needed
+
+Two files are required in `baseline/weights/easyocr/`:
 
 | File | Upstream archive |
 | --- | --- |
 | `craft_mlt_25k.pth` | `https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip` |
 | `zh_sim_g2.pth` | `https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/zh_sim_g2.zip` |
 
-The archives contain the named weight files. The shared downloader must unpack
-them and pin/verify the **extracted file's SHA-256**, not just the archive hash.
-Upstream's MD5 receipts are not substituted for SHA-256. Do not insert invented
-or placeholder digests. The OCR verifier reads entries of this form:
+The current common manifest only registers YOLO. Download and extract the
+two archives explicitly after permission, calculate each extracted `.pth`
+file's actual SHA-256, and add entries to the shared manifest. Use plain
+filenames (`zh_sim_g2.pth`, not `easyocr/zh_sim_g2.pth`) to conform to #4's
+manifest validator. Never insert placeholder or invented digests.
+
+The shared `weights.fetch()` currently handles direct weight files, not ZIP
+extraction. Do not use an extracted-file hash to verify an archive. OCR reuses
+`baseline.common.weights.verify()` for the extracted files, then constructs
+EasyOCR with `download_enabled=False`. Hash verification happens before loading.
+
+## Detector predictions (#5)
+
+`--predictions baseline/detection/results/RUN/predictions_val.json` accepts
+Max's native result format directly:
 
 ```text
-name: easyocr-zh-sim-g2
-url: upstream URL handled by the shared downloader
-filename: easyocr/zh_sim_g2.pth
-sha256: actual 64-character SHA-256 of the extracted .pth file
+provenance: schema_version, model_id, weight_sha256, split, inference,
+            input_sha256.metadata, ...
+images: [{image_path, boxes, scores, class_ids, ...}, ...]
 ```
 
-Accepted manifest containers: a list of entries, a name-to-entry mapping, or
-either under a `models` key. Entries retain the planned `name`, `url`,
-`filename`, `sha256` fields. OCR identifies its entries by filename and reads
-the already extracted files in `baseline/weights/easyocr/`.
+The adapter preserves provenance, validates single-class pixel `xyxy` boxes,
+requires every selected split image once, and rejects mismatched split or
+dataset metadata fingerprints. It chooses the highest-score box, rounds
+outwards and clamps to the image; empty/out-of-image crops count as no detection.
+The validation-selected contract also freezes detector inference settings for
+test. The earlier `schema_version` / `metadata` / `records` interchange schema
+is still supported for external callers.
 
-If #4 chooses another manifest/cache layout, supply `--weights-manifest` and
-`--weights-directory` or adapt this small verifier. It requires no specific
-`baseline.common` function names. The two OCR entries are intentionally not
-added to a competing shared manifest in this branch; add them after actual
-downloads and hashes are available.
+Max's prediction files are gitignored and absent from his commits. Obtain them
+from his run, or run the detector locally after the prepared images and YOLO
+weights are available. Metric summary tables alone are insufficient for OCR.
 
-## Saved detector predictions (#5)
+## Remaining work for real evaluation
 
-OCR consumes a file, not a detector implementation API. Convert saved
-predictions to this schema if the detector uses another representation:
+1. Provide the prepared dataset with `images/` and `crops_gt/`; retain the
+   existing train/val/test membership and metadata.
+2. Install the shared baseline environment plus OCR dependencies after approval.
+3. Obtain/extract/hash/register the two EasyOCR weights; smoke-test a val crop
+   with downloads disabled.
+4. Run all three validation modes for OCR-only and select its policy.
+5. Supply detector validation predictions; run/select end-to-end validation.
+6. Run test once per protocol with its selected mode/threshold and saved
+   detector test predictions; generate metrics and accuracy/coverage plots.
+7. Validate/export the training manifest for future CRNN experiments.
 
-```json
-{
-  "schema_version": 1,
-  "metadata": {
-    "model_id": "the detector's actual model identifier",
-    "weight_sha256": "the detector's actual weight SHA-256",
-    "box_format": "xyxy_pixels"
-  },
-  "records": [
-    {
-      "image_path": "images/val/ee22be0fe8e36f86_s100.jpg",
-      "boxes": [[40.5, 120.0, 200.0, 170.0]],
-      "scores": [0.9]
-    }
-  ]
-}
-```
-
-Paths are relative to `data/dataset/` and must match `metadata.csv`.
-Include every selected split image exactly once; represent no detections
-with `boxes: []`, `scores: []`. Coordinates are original-image pixels in
-`[x1, y1, x2, y2]` order, not normalized YOLO center/width/height.
-For scale 1.0, include 700 val or 800 test images. Scaled experiments have
-their own selected prediction files. OCR chooses the highest-score box
-(first box breaks score ties), rounds outwards and clamps it to the image.
-An empty/out-of-image crop counts as no detection.
-
-The detector's own confidence/NMS settings should remain fixed between val
-and test. Preserve them as extra metadata fields. The detector model id and
-weight hash must match the validation-selected contract. Add a format adapter
-once #5's actual output is available; no detector rerun is needed for conversion.
-
-## After combining branches
-
-1. Resolve shared dependency versions and register/extract/hash the two weights.
-2. Make the prepared dataset images and crops available; retain existing splits.
-3. Smoke-test EasyOCR on one validation crop with network access disabled.
-4. Run all three validation modes for OCR-only; select its policy.
-5. Adapt #5's validation predictions and run/select end-to-end validation.
-6. Run each protocol on test once with its selected mode and threshold.
-7. Export and validate the training manifest; generate plots and record metrics.
-
-The real-model checks and final metrics remain prerequisites for completing
-#6/#7. This branch supplies the implementation and independent checks.
+Real-model checks and final recognition metrics are still prerequisites for
+completing #6/#7; synthetic integration tests are not accuracy measurements.
