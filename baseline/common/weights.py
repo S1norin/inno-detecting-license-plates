@@ -5,9 +5,11 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import tempfile
 from pathlib import Path
 from urllib.request import urlopen
+from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = Path(__file__).with_name("models.json")
@@ -33,6 +35,14 @@ def model_entry(name, manifest=MANIFEST):
         raise ValueError("Manifest sha256 must be a lowercase 64-character hex digest")
     if not entry["url"].startswith("https://"):
         raise ValueError("Weight URL must use HTTPS")
+    subdir = entry.get("cache_subdir", "")
+    if subdir and ("/" in subdir or "\\" in subdir or subdir in {".", ".."}):
+        raise ValueError("Cache subdir must be a plain directory name")
+    if "archive_member" in entry:
+        if entry["archive_member"] != filename:
+            raise ValueError("Archive member must match the plain weight filename")
+        if not re.fullmatch(r"[a-f0-9]{64}", entry.get("archive_sha256", "")):
+            raise ValueError("Archive sha256 must be pinned separately from the extracted weight")
     return entry
 
 
@@ -45,7 +55,7 @@ def verify(path, expected):
 
 def verified_path(name=DEFAULT_MODEL, cache=CACHE, manifest=MANIFEST):
     entry = model_entry(name, manifest)
-    path = Path(cache) / entry["filename"]
+    path = Path(cache) / entry.get("cache_subdir", "") / entry["filename"]
     if not path.is_file():
         raise FileNotFoundError(f"Missing cached weights: {path}. Run python -m baseline.common.weights fetch {name}")
     return verify(path, entry["sha256"])
@@ -53,24 +63,40 @@ def verified_path(name=DEFAULT_MODEL, cache=CACHE, manifest=MANIFEST):
 
 def fetch(name=DEFAULT_MODEL, cache=CACHE, manifest=MANIFEST):
     entry = model_entry(name, manifest)
-    cache = Path(cache)
+    root_cache = Path(cache)
+    cache = root_cache / entry.get("cache_subdir", "")
     destination = cache / entry["filename"]
     if destination.exists():
-        return verified_path(name, cache, manifest)
+        return verified_path(name, root_cache, manifest)
     cache.mkdir(parents=True, exist_ok=True)
     temporary = None
+    extracted = None
     try:
         with tempfile.NamedTemporaryFile(dir=cache, suffix=".part", delete=False) as output:
             temporary = Path(output.name)
             with urlopen(entry["url"], timeout=60) as source:
                 while chunk := source.read(1024 * 1024):
                     output.write(chunk)
-        verify(temporary, entry["sha256"])
-        os.replace(temporary, destination)
-        return verified_path(name, cache, manifest)
+        if "archive_member" in entry:
+            verify(temporary, entry["archive_sha256"])
+            with ZipFile(temporary) as archive:
+                if archive.namelist().count(entry["archive_member"]) != 1:
+                    raise ValueError("Archive must contain exactly one named weight member")
+                with tempfile.NamedTemporaryFile(dir=cache, suffix=".part", delete=False) as output:
+                    extracted = Path(output.name)
+                    with archive.open(entry["archive_member"]) as source:
+                        shutil.copyfileobj(source, output)
+            verify(extracted, entry["sha256"])
+            os.replace(extracted, destination)
+        else:
+            verify(temporary, entry["sha256"])
+            os.replace(temporary, destination)
+        return verified_path(name, root_cache, manifest)
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+        if extracted is not None:
+            extracted.unlink(missing_ok=True)
 
 
 def main():
