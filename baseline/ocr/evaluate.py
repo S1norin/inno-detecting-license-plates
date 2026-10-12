@@ -114,6 +114,29 @@ def evaluate_test(raw, selection):
     }
 
 
+def evaluate_validation(raw, selection, raw_sha256):
+    validate_raw(raw)
+    metadata = raw["metadata"]
+    if metadata["split"] != "val":
+        raise ValueError("Validation reporting requires a val cache")
+    policy = load_policy(selection, metadata["protocol"])
+    candidate = policy["candidates"][metadata["mode"]]
+    if candidate["raw_sha256"] != raw_sha256 or model_contract(metadata) != candidate["contract"]:
+        raise ValueError("Validation cache differs from the saved selection")
+    return {
+        "schema_version": 1,
+        "metadata": {
+            **metadata,
+            "timestamp": timestamp(),
+            "score_function": policy["score_function"],
+            "tau": candidate["selected_tau"],
+            "selected_mode": metadata["mode"] == policy["mode"],
+            "selection_timestamp": selection["timestamp"],
+        },
+        "metrics": evaluate(raw["records"], candidate["selected_tau"], policy["score_function"]),
+    }
+
+
 def plot_selection(selection, output):
     import matplotlib
 
@@ -140,10 +163,11 @@ def main():
     select.add_argument("--raw", type=Path, nargs="+", required=True)
     select.add_argument("--score-function", choices=SCORE_FUNCTIONS, default="mean")
     select.add_argument("--output", type=Path, required=True)
-    test = commands.add_parser("test")
-    test.add_argument("--raw", type=Path, required=True)
-    test.add_argument("--selection", type=Path, required=True)
-    test.add_argument("--output", type=Path, required=True)
+    for name in ("val", "test"):
+        report = commands.add_parser(name)
+        report.add_argument("--raw", type=Path, required=True)
+        report.add_argument("--selection", type=Path, required=True)
+        report.add_argument("--output", type=Path, required=True)
     plot = commands.add_parser("plot")
     plot.add_argument("--selection", type=Path, required=True)
     plot.add_argument("--output", type=Path, required=True)
@@ -157,7 +181,10 @@ def main():
         if args.command == "select":
             write_json(args.output, select_validation(args.raw, args.score_function))
         else:
-            report = evaluate_test(read_json(args.raw), read_json(args.selection))
+            if args.command == "val":
+                report = evaluate_validation(read_json(args.raw), read_json(args.selection), digest(args.raw))
+            else:
+                report = evaluate_test(read_json(args.raw), read_json(args.selection))
             report["metadata"].update(raw_sha256=digest(args.raw), selection_sha256=digest(args.selection))
             write_json(args.output, report)
 
