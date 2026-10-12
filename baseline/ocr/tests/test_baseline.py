@@ -18,6 +18,7 @@ from baseline.ocr.export_train import export_training
 from baseline.ocr.io import digest, load_samples, validate_raw, write_json
 from baseline.ocr.metrics import edit_distance, evaluate
 from baseline.ocr.run import run_inference
+from baseline.ocr.setup import combined_pins, prepare
 
 
 def record(text="皖A12345", confidences=None, status=None, sample_id="sample", bucket="medium"):
@@ -190,6 +191,42 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(predictions[samples[0]["image_path"]]["boxes"], [])
         with self.assertRaises(ValueError):
             load_predictions(path, samples + [{"image_path": "images/val/b.jpg"}])
+
+    def test_native_detector_predictions_preserve_traceability_and_reject_wrong_inputs(self):
+        path = self.root / "native.json"
+        value = {
+            "provenance": {
+                "schema_version": 1,
+                "model_id": "yolo11s-license-plate",
+                "weight_sha256": "a" * 64,
+                "split": "val",
+                "inference": {"conf": 0.001, "imgsz": 640},
+                "input_sha256": {"metadata": "b" * 64},
+            },
+            "images": [{"image_path": "images/val/a.jpg", "boxes": [[1, 2, 5, 6]], "scores": [0.9], "class_ids": [0]}],
+        }
+        write_json(path, value)
+        samples = [{"image_path": "images/val/a.jpg"}]
+        metadata, predictions = load_predictions(path, samples, split="val", metadata_sha256="b" * 64)
+        self.assertEqual(metadata["inference"]["conf"], 0.001)
+        self.assertEqual(predictions["images/val/a.jpg"]["boxes"], [[1, 2, 5, 6]])
+        with self.assertRaisesRegex(ValueError, "different split"):
+            load_predictions(path, samples, split="test")
+        with self.assertRaisesRegex(ValueError, "different dataset"):
+            load_predictions(path, samples, metadata_sha256="c" * 64)
+        value["images"][0]["class_ids"] = [1]
+        write_json(path, value)
+        with self.assertRaisesRegex(ValueError, "single-class"):
+            load_predictions(path, samples)
+
+    def test_ocr_setup_preserves_shared_pins_and_defaults_to_inspection(self):
+        pins = combined_pins()
+        self.assertEqual(pins["torch"], "2.6.0+cpu")
+        self.assertEqual(pins["matplotlib"], "3.10.3")
+        self.assertEqual(pins["easyocr"], "1.7.2")
+        with patch("baseline.ocr.setup.ensure_environment") as install:
+            prepare()
+            install.assert_not_called()
 
 
 class DatasetTests(unittest.TestCase):

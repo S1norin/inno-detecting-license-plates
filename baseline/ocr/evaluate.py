@@ -15,6 +15,8 @@ def model_contract(metadata):
         contract["preprocessing_sha256"] = metadata["preprocessing_sha256"]
     if metadata["protocol"] == "end_to_end":
         contract["detector"] = {field: metadata["detector"][field] for field in ("model_id", "weight_sha256")}
+        if "inference" in metadata["detector"]:
+            contract["detector"]["inference"] = metadata["detector"]["inference"]
     return contract
 
 
