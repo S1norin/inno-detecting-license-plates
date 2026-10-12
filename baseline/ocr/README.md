@@ -1,6 +1,6 @@
 # Recognition baseline
 
-Work for issues #6 and #7. The local OCR branch now includes the infrastructure
+Work for issues #6 and #7. The OCR branch includes the infrastructure
 and detector from PRs #8 and #9. OCR additions live under `baseline/ocr/`, apart
 from `baseline/requirements-ocr.txt`. See [INTEGRATION.md](INTEGRATION.md)
 for the completed integration and [REPORT.md](REPORT.md) for measured results.
