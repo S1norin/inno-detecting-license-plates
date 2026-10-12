@@ -4,6 +4,8 @@ import math
 from importlib.metadata import version
 from pathlib import Path
 
+from baseline.common.weights import verify
+
 from .ctc import decode_greedy
 from .io import digest, read_json
 
@@ -30,10 +32,8 @@ def verify_weights(directory, manifest):
         path = Path(directory) / filename
         if not path.is_file():
             raise FileNotFoundError(f"Missing offline weight: {path}; obtain it through baseline/common first")
-        actual = digest(path)
-        if actual != expected:
-            raise ValueError(f"Weight hash mismatch for {filename}: expected {expected}, actual {actual}")
-        hashes[filename] = actual
+        verify(path, expected)
+        hashes[filename] = expected
     return hashes
 
 
