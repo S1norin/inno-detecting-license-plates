@@ -157,8 +157,8 @@ score function, tau and timestamps. Reports bind raw and selection SHA-256 value
 Every validation cache has 700 distinct samples; every test cache has 800;
 no unread or missing-detection sample is dropped.
 
-Code and this compact report are on `feat/ocr-recognition-baseline`. The OCR PR
-is stacked on detector PR #9; merge dependencies first and retarget to `main`
+Code and this compact report are on `feat/ocr-recognition-baseline`. The planned
+OCR PR targets detector PR #9; merge dependencies first and retarget to `main`
 before the final merge. Raw data, weights and inference caches stay local. See
 [README.md](README.md) for reproduction commands and
 [INTEGRATION.md](INTEGRATION.md) for the shared environment and detector contract.
