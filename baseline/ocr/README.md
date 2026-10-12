@@ -3,22 +3,27 @@
 Work for issues #6 and #7. The local OCR branch now includes the infrastructure
 and detector from PRs #8 and #9. OCR additions live under `baseline/ocr/`, apart
 from `baseline/requirements-ocr.txt`. See [INTEGRATION.md](INTEGRATION.md)
-for the remaining runtime inputs needed to run both protocols.
+for the completed integration and [REPORT.md](REPORT.md) for measured results.
 
 ## Current verification
 
-The 21 dependency-free OCR tests cover hand-computed recognition metrics, CTC
+The 48 combined baseline tests cover hand-computed recognition metrics, CTC
 decoding, validation selection, cache resume, hash mismatches, missing
 detections, crop clamping, training vocabulary and test-run guards.
 The committed `charset.json` is generated from the actual `ocr_train.csv`.
 Integration tests read the detector's native `provenance`/`images` schema,
 preserve its inference settings and reject wrong split/metadata inputs.
 
-Real EasyOCR inference, preprocessing ablations and final dataset metrics
-have **not** been run yet. A fresh clone contains LFS pointers for the source
-photos and does not contain the regenerated images or crops. Model weights
-and the shared baseline environment are also absent. Do not interpret the
-synthetic test results as model accuracy or close #6/#7 on their basis.
+The real shared environment and an offline EasyOCR smoke test were verified.
+The supplied archive's dataset tables match the repository byte for byte;
+all 30,000 prepared images/crops are extracted locally. Training export was
+validated for all 10,500 crops. Both protocols were evaluated on all three
+validation modes, with one frozen-policy test run each. Recognition is weak;
+see the measured results in [REPORT.md](REPORT.md). Synthetic tests verify the
+implementation and do not measure model accuracy.
+
+A fresh clone still needs the prepared images/crops and explicit weight fetches;
+large inputs, weights, environments and raw caches remain gitignored.
 
 ## Independent checks
 
@@ -66,10 +71,21 @@ and rejects conflicting pins. It retains #4's torch 2.6.0+cpu / torchvision
 dependencies are resolved within those constraints. `matplotlib` is only needed
 to plot. The setup command without `--install` remains read-only.
 
-Place `craft_mlt_25k.pth` and `zh_sim_g2.pth` in `baseline/weights/easyocr/`.
-Their **actual, pinned SHA-256 values** must be in `baseline/common/models.json`.
-The reader verifies both local files before loading them and sets
-`download_enabled=False`. There are no automatic installs or downloads.
+After permission, fetch the two pinned EasyOCR assets:
+
+```bash
+.venv-baseline/bin/python -m baseline.common.weights fetch easyocr-craft
+.venv-baseline/bin/python -m baseline.common.weights fetch easyocr-zh-sim-g2
+.venv-baseline/bin/python -m baseline.common.weights verify easyocr-craft
+.venv-baseline/bin/python -m baseline.common.weights verify easyocr-zh-sim-g2
+```
+
+The shared downloader separately verifies archive and extracted-file SHA-256
+values pinned in `baseline/common/models.json`, then promotes only the named
+weight into `baseline/weights/easyocr/`. Initial receipts were checked against
+EasyOCR 1.7.2's upstream MD5 values before SHA-256 pinning. The reader verifies
+both files before loading them and sets `download_enabled=False`. There are
+no automatic installs or downloads during inference.
 
 ## Inference and validation selection
 
@@ -91,6 +107,11 @@ For end-to-end, repeat with `--protocol end_to_end`, add
 use a separate output folder. #5's native saved results are accepted directly;
 no conversion or detector rerun is needed when that file is available.
 
+Plan for roughly 0.5–2 seconds per crop on CPU, plus model loading and atomic
+cache writes; Canny and parallel jobs can take longer. Each protocol/mode has
+700 validation crops at scale 1.0, and the selected test run has 800 samples.
+The full validation ablation processes 4,200 inputs across six runs.
+
 Each raw file contains every selected image, decoded text and one CTC
 probability per character, GT text, size bucket, status, input-image hash,
 model/version/weight hashes, dataset-table hashes, protocol, mode and scale.
@@ -111,6 +132,13 @@ python -m baseline.ocr.evaluate select \
 .venv-baseline/bin/python -m baseline.ocr.evaluate plot \
   --selection baseline/ocr/results/ocr_only/accuracy_coverage_val.json \
   --output baseline/ocr/results/ocr_only/accuracy_coverage_val.png
+
+for mode in none gray_contrast canny; do
+  python -m baseline.ocr.evaluate val \
+    --raw "baseline/ocr/results/ocr_only/raw_ocr_only_val_${mode}.json" \
+    --selection baseline/ocr/results/ocr_only/accuracy_coverage_val.json \
+    --output "baseline/ocr/results/ocr_only/metrics_ocr_only_val_${mode}.json"
+done
 ```
 
 Pass the three end-to-end caches to `select` separately when they are ready.
@@ -176,12 +204,14 @@ per-character confidences. The engine uses its CRAFT text regions and
 recognizer, extracts normalized CTC probabilities, and greedily collapses
 repeated symbols/blanks. Each emitted character receives the maximum
 probability in its consecutive CTC run. A blank separates repeated characters.
-Regions are concatenated in top-to-bottom, left-to-right order.
+Regions are concatenated in top-to-bottom, left-to-right order. All regions of
+one plate share a recognition batch/width; native CPU `readtext()` can recognize
+regions separately, so decoded text is not guaranteed to be identical.
 
 This is an explicit adapter, not a claim that `readtext()` supplies character
 probabilities. CPU inference uses one torch thread, deterministic algorithms
 and no dynamic quantization. EasyOCR's automatic contrast retry is disabled
 so preprocessing modes remain explicit. The adapter is pinned to 1.7.2;
-verify it on real crops before reporting metrics.
+real validation crops were checked before reporting metrics.
 
 Reference: [EasyOCR recognition implementation](https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/easyocr/recognition.py).
