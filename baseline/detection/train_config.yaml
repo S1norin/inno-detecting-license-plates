@@ -1,0 +1,10 @@
+# Preparation only. No command in baseline evaluation starts training.
+model: baseline/weights/license-plate-finetune-v1s.pt
+data: data/dataset/dataset_original.yaml
+imgsz: 640
+epochs: 100
+batch: 16
+seed: 42
+deterministic: true
+project: baseline/detection/results
+name: finetune
