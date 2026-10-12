@@ -2,7 +2,9 @@
 
 The OCR branch includes Max's infrastructure commit `340f17f6` from PR #8 and
 detector commit `d99a428f` from PR #9. The local merge had no conflicts.
-No remote PR was merged or updated; the OCR branch remains local.
+The OCR PR is stacked on `feat/yolo11-detection-baseline` (PR #9).
+Merge #8, then #9; retarget the OCR PR to `main` before its final merge.
+The local integration did not merge or modify Max's remote PRs.
 
 ## Environment (#4)
 
