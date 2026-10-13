@@ -1,0 +1,14 @@
+# Install alongside the torch/torchvision pair chosen in issue #4.
+# Do not install a second torch version from the data environment.
+easyocr==1.7.2
+matplotlib==3.10.3
+
+# Resolved OCR-only dependencies; shared pins remain in requirements-detection.txt.
+imageio==2.38.1
+lazy-loader==0.6
+ninja==1.13.2
+pyclipper==1.4.0
+python-bidi==0.6.11
+scikit-image==0.26.0
+shapely==2.2.0
+tifffile==2026.9.20
