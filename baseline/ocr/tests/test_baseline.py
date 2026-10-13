@@ -256,6 +256,7 @@ class DatasetTests(unittest.TestCase):
                     "crop_path": f"crops_gt/{split}/a_{scale}.png",
                     "plate_text": "皖A12345",
                     "size_bucket": "medium",
+                    "tilt_magnitude": 5.0,
                 }
                 rows.append(sample)
                 metadata.append({**sample, "image_path": f"images/{split}/a_{scale}.jpg"})

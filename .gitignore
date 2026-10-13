@@ -15,3 +15,9 @@ baseline/detection/results/
 
 # Local copy of the prepared Telegram dataset archive
 CCPD_Data_Preprocessing.zip
+
+# Evaluation run artifacts (regenerable; the tracked REPORT.md and the
+# committed summary figure are copies from the latest accepted run)
+baseline/evaluation/results/
+baseline/evaluation/figures/*.png
+!baseline/evaluation/figures/baseline_comparison.png

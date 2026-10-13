@@ -64,12 +64,7 @@ def load_samples(root, split, scale=1.0):
         raise ValueError("Invalid split or scale")
 
     root = Path(root)
-    metadata = {}
-    for row in read_table(root / "metadata.csv"):
-        key = (row["parent_id"], float(row["scale"]))
-        if key in metadata:
-            raise ValueError(f"Duplicate metadata key: {key}")
-        metadata[key] = row
+    metadata = read_metadata(root)
 
     samples = []
     seen = set()
@@ -102,12 +97,42 @@ def load_samples(root, split, scale=1.0):
                 "ground_truth": target,
                 "crop_path": row["crop_path"],
                 "image_path": meta["image_path"],
+                "tilt_magnitude": float(meta["tilt_magnitude"]),
             }
         )
 
     if not samples:
         raise ValueError(f"No samples for {split}, scale={scale}")
     return samples
+
+
+def read_metadata(root):
+    metadata = {}
+    for row in read_table(Path(root) / "metadata.csv"):
+        key = (row["parent_id"], float(row["scale"]))
+        if key in metadata:
+            raise ValueError(f"Duplicate metadata key: {key}")
+        metadata[key] = row
+    return metadata
+
+
+def join_tilt(records, root):
+    """Return records with tilt_magnitude joined from metadata.csv.
+
+    The input records are not mutated; sample ids follow the crop naming
+    convention ``{parent_id}_s{scale*100}``.
+    """
+    metadata = read_metadata(root)
+    joined = []
+    for record in records:
+        parent_id, _, size = record["sample_id"].rpartition("_s")
+        key = (parent_id, int(size) / 100)
+        if key not in metadata:
+            raise ValueError(f"No metadata for sample: {record['sample_id']}")
+        item = dict(record)
+        item["tilt_magnitude"] = float(metadata[key]["tilt_magnitude"])
+        joined.append(item)
+    return joined
 
 
 def validate_raw(raw, *, complete=True):
