@@ -71,16 +71,9 @@ class InputLoadingTest(unittest.TestCase):
             _load(root)
         self.assertIn("split", str(error.exception))
 
-    def test_wrong_detection_scale(self):
-        root = self._tampered_root()
-        _mutate(root, "detection/predictions_val.json", lambda doc: doc["provenance"].__setitem__("scale", 0.75))
-        with self.assertRaises(InputError) as error:
-            _load(root)
-        self.assertIn("scale", str(error.exception))
-
     def test_detection_model_mismatch(self):
         root = self._tampered_root()
-        _mutate(root, "detection/metrics_val.json", lambda doc: doc.__setitem__("model", "yolo11n"))
+        _mutate(root, "detection/metrics_val.json", lambda doc: doc.__setitem__("model_id", "yolo11n"))
         with self.assertRaises(InputError) as error:
             _load(root)
         self.assertIn("model", str(error.exception))

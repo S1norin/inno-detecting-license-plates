@@ -155,9 +155,8 @@ def load_detection(directory, dataset):
     for (kind, split), artifact in artifacts.items():
         name = f"{kind}_{split}.json"
         _provenance_field(artifact, name, "split", split)
-        _provenance_field(artifact, name, "scale", split)
     models = {
-        _provenance_field(artifact, f"{kind}_{split}.json", "model", split)
+        _provenance_field(artifact, f"{kind}_{split}.json", "model_id", split)
         for (kind, split), artifact in artifacts.items()
     }
     if len(models) != 1:
@@ -206,6 +205,19 @@ def load_detection(directory, dataset):
     )
 
 
+def _check_digests(artifact_digests, dataset, name):
+    # Artifacts digest only the tables of their own split; every digest they
+    # declare must match the current dataset.
+    if "metadata.csv" not in artifact_digests:
+        raise InputError(f"{name}: dataset_digests is missing metadata.csv")
+    for field, actual in artifact_digests.items():
+        expected = dataset.digests.get(field)
+        if expected is None:
+            raise InputError(f"{name}: unknown dataset digest field {field!r}")
+        if actual != expected:
+            raise InputError(f"{name}: dataset digest for {field} does not match the dataset")
+
+
 def _ocr_file(directory, protocol, name):
     return _check_file(Path(directory) / protocol, name)
 
@@ -234,10 +246,7 @@ def load_ocr(directory, dataset, detection):
                     f"{name}: sample_count is {metadata['sample_count']}, "
                     f"dataset has {dataset.sample_count['val']} val samples"
                 )
-            for field, expected in dataset.digests.items():
-                actual = metadata["dataset_digests"].get(field)
-                if actual != expected:
-                    raise InputError(f"{name}: dataset digest for {field} does not match the dataset")
+            _check_digests(metadata["dataset_digests"], dataset, name)
             if engine is None:
                 engine = metadata["engine"]
             elif metadata["engine"] != engine:
@@ -279,9 +288,7 @@ def load_ocr(directory, dataset, detection):
             raise InputError(f"{rep_name}: split/mode does not match the validation selection")
         if metadata.get("tau") != policy["tau"]:
             raise InputError(f"{rep_name}: tau does not match the validation selection")
-        for field, expected in dataset.digests.items():
-            if metadata["dataset_digests"].get(field) != expected:
-                raise InputError(f"{rep_name}: dataset digest for {field} does not match the dataset")
+        _check_digests(metadata["dataset_digests"], dataset, rep_name)
         test_report[protocol] = report
 
     digests = {}

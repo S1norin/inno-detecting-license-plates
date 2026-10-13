@@ -247,7 +247,7 @@ def _dataset(root):
 
 def _detection(root):
     directory = root / "detection"
-    provenance_base = {"scale": 1.0, "model": DETECTION_MODEL, "timestamp": TIMESTAMP}
+    provenance_base = {"model_id": DETECTION_MODEL, "timestamp": TIMESTAMP}
     for split in ("val", "test"):
         records = []
         for parent_id, (sample_split, bucket, tilt, _plate) in SAMPLES.items():

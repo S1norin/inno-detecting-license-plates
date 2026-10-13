@@ -16,8 +16,12 @@ that does not match the dataset.
 - `--detection-results` — directory with `predictions_{val,test}.json` and
   `metrics_{val,test}.json` (from `baseline/detection/run.py`)
 - `--ocr-results` — directory with `ocr_only/` and `end_to_end/` protocol
-  folders, each holding `cache_{val,test}_{mode}.json` for all three modes,
-  `selection.json`, and `test_report.json` (from `baseline/ocr/run.py`)
+  folders, each holding `raw_{protocol}_val_{mode}.json` for all three modes,
+  `selection_{protocol}_val.json`, and `report_{protocol}_test.json`
+  (from `baseline/ocr/run.py` + `baseline/ocr/evaluate.py`; the stage outputs
+  `accuracy_coverage_val.json` and `metrics_{protocol}_test_{mode}.json` are
+  copied under these canonical names — the stage files themselves are never
+  modified)
 
 Every input is validated against the dataset (splits, scales, sample counts,
 dataset digests, model identity, selection-to-cache binding) before anything
