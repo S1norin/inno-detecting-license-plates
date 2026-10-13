@@ -12,6 +12,7 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 
+from baseline.ocr.confidence import SCORE_FUNCTIONS
 from baseline.ocr.io import MODES, PROTOCOLS, dataset_path, digest, read_json, validate_raw
 
 SPLITS = ("val", "test")
@@ -179,6 +180,9 @@ def load_detection(directory, dataset):
                 raise InputError(f"predictions_{split}.json: {error}") from error
             if not record.get("ground_truth"):
                 raise InputError(f"predictions_{split}.json: empty ground truth for {relative}")
+            boxes, scores = record.get("boxes"), record.get("scores")
+            if not isinstance(boxes, list) or not isinstance(scores, list) or len(boxes) != len(scores):
+                raise InputError(f"predictions_{split}.json: boxes and scores missing or mismatched for {relative}")
             parent_id = Path(relative).stem.rsplit("_s", 1)[0]
             ids.add(f"{parent_id}_s100")
         expected = set(dataset.sample_ids[split])
@@ -270,6 +274,17 @@ def load_ocr(directory, dataset, detection):
         if sel.get("schema_version") != 1 or sel.get("selection_split") != "val":
             raise InputError(f"{sel_name}: unsupported selection schema")
         policy = sel["protocols"][protocol]
+        if policy.get("mode") not in MODES:
+            raise InputError(f"{sel_name}: selected mode {policy.get('mode')!r} is not one of {MODES}")
+        if policy.get("score_function") not in SCORE_FUNCTIONS:
+            raise InputError(f"{sel_name}: unknown score function {policy.get('score_function')!r}")
+        tau = policy.get("tau")
+        try:
+            tau_value = float(tau)
+        except (TypeError, ValueError):
+            raise InputError(f"{sel_name}: selected tau {tau!r} is not a number") from None
+        if not 0.50 <= tau_value <= 0.99:
+            raise InputError(f"{sel_name}: selected tau {tau!r} is outside the validation grid")
         if set(policy["candidates"]) != set(MODES):
             raise InputError(f"{sel_name}: candidates must cover all three modes")
         for mode in MODES:

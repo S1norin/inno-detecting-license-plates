@@ -158,6 +158,42 @@ class InputLoadingTest(unittest.TestCase):
             _load(root)
         self.assertIn("mode", str(error.exception))
 
+    def test_selection_mode_outside_modes(self):
+        root = self._tampered_root()
+        def bad_mode(doc):
+            doc["protocols"]["ocr_only"]["mode"] = "bilinear"
+        _mutate(root, "ocr/ocr_only/selection_ocr_only_val.json", bad_mode)
+        with self.assertRaises(InputError) as error:
+            _load(root)
+        self.assertIn("selected mode", str(error.exception))
+
+    def test_selection_unknown_score_function(self):
+        root = self._tampered_root()
+        def bad_function(doc):
+            doc["protocols"]["ocr_only"]["score_function"] = "max"
+        _mutate(root, "ocr/ocr_only/selection_ocr_only_val.json", bad_function)
+        with self.assertRaises(InputError) as error:
+            _load(root)
+        self.assertIn("score function", str(error.exception))
+
+    def test_selection_tau_outside_grid(self):
+        root = self._tampered_root()
+        def bad_tau(doc):
+            doc["protocols"]["ocr_only"]["tau"] = 0.30
+        _mutate(root, "ocr/ocr_only/selection_ocr_only_val.json", bad_tau)
+        with self.assertRaises(InputError) as error:
+            _load(root)
+        self.assertIn("tau", str(error.exception))
+
+    def test_prediction_boxes_scores_mismatch(self):
+        root = self._tampered_root()
+        def bad_record(doc):
+            doc["images"][0]["scores"].append(0.9)
+        _mutate(root, "detection/predictions_val.json", bad_record)
+        with self.assertRaises(InputError) as error:
+            _load(root)
+        self.assertIn("boxes and scores", str(error.exception))
+
     def test_digests_recorded(self):
         dataset, detection, ocr = _load(self.root)
         self.assertEqual(set(dataset.digests), {"metadata.csv", "ocr_val.csv", "ocr_test.csv"})
