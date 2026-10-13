@@ -7,3 +7,8 @@ __pycache__/
 # Regenerable dataset outputs (see README: Getting the data)
 data/dataset/images/
 data/dataset/crops_gt/
+
+# Isolated baseline runtime and generated model artifacts
+.venv-baseline/
+baseline/weights/
+baseline/detection/results/

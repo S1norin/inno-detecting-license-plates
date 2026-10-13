@@ -1,0 +1,8 @@
+[
+  {
+    "name": "yolo11s-license-plate",
+    "url": "https://huggingface.co/morsetechlab/yolov11-license-plate-detection/resolve/251a30d7daedca065f56e04b0af04052c907c68f/license-plate-finetune-v1s.pt",
+    "filename": "license-plate-finetune-v1s.pt",
+    "sha256": "95e50c25ab7066dd0ca5aec18fa80349676db08697780d1149576461174d2381"
+  }
+]
