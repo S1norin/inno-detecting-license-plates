@@ -29,27 +29,46 @@ is computed.
 
 ## Usage
 
+The OCR stage writes its selection and test report under stage-specific
+names (`accuracy_coverage_val.json`, `metrics_<protocol>_test_<mode>.json`).
+Assemble a canonical input directory by copying (never modifying) the stage
+files:
+
+```bash
+mkdir -p baseline/evaluation/results/inputs/ocr
+for protocol in ocr_only end_to_end; do
+  mkdir -p baseline/evaluation/results/inputs/ocr/$protocol
+  cp baseline/ocr/results/$protocol/raw_${protocol}_val_*.json \
+     baseline/evaluation/results/inputs/ocr/$protocol/
+  cp baseline/ocr/results/$protocol/accuracy_coverage_val.json \
+     baseline/evaluation/results/inputs/ocr/$protocol/selection_${protocol}_val.json
+  mode=$(.venv-baseline/bin/python -c "import json;\
+    print(json.load(open('baseline/ocr/results/$protocol/accuracy_coverage_val.json'))['protocols']['$protocol']['mode'])")
+  cp baseline/ocr/results/$protocol/metrics_${protocol}_test_${mode}.json \
+     baseline/evaluation/results/inputs/ocr/$protocol/report_${protocol}_test.json
+done
+```
+
 Offline consolidation only (stdlib, no model loading):
 
 ```bash
 python -m baseline.evaluation.run \
   --dataset data/dataset \
-  --detection-results baseline/detection/results/<run> \
-  --ocr-results baseline/ocr/results/<run> \
+  --detection-results baseline/detection/results/baseline \
+  --ocr-results baseline/evaluation/results/inputs/ocr \
   --out baseline/evaluation/results/<run> \
   --no-probe
 ```
 
 With the sampled timing probe (needs the baseline venv, detector weights, and
-offline EasyOCR weights):
+offline EasyOCR weights; defaults to `baseline/weights/license-plate-finetune-v1s.pt`):
 
 ```bash
 .venv-baseline/bin/python -m baseline.evaluation.run \
   --dataset data/dataset \
-  --detection-results baseline/detection/results/<run> \
-  --ocr-results baseline/ocr/results/<run> \
-  --out baseline/evaluation/results/<run> \
-  --detector-weights baseline/weights/<yolo11s>.pt
+  --detection-results baseline/detection/results/baseline \
+  --ocr-results baseline/evaluation/results/inputs/ocr \
+  --out baseline/evaluation/results/<run>
 ```
 
 The probe samples `--probe-n` (default 100) original-scale images with
@@ -84,7 +103,13 @@ level are copies of the latest accepted run's artifacts.
   sample id). Recognition cases come from validation so the test split stays
   untouched.
 - Full-split per-image timing (all 1500 val+test images) is intentionally not
-  done here; it is tracked as a follow-up issue.
+  done here; it is tracked as a follow-up issue: "Full-split timing with
+  per-image breakdowns" (see TODO in `openspec/changes/baseline-evaluation-stack/tasks.md` §6.3).
+
+## TODO
+
+- [ ] Full-split timing with per-image breakdowns — tracked as a GitHub issue
+  ("Full-split timing with per-image breakdowns"); link it here once created.
 
 ## Tests
 

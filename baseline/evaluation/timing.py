@@ -94,8 +94,11 @@ def run_probe(dataset, detector_weights, easyocr_weights, manifest, n, seed, tim
         stats["max_rss_mb_after"] = max_rss_mb()
         stages[name] = stats
 
+    # Frozen detection inference settings (baseline/detection/evaluate.py).
+    settings = {"imgsz": 640, "conf": 0.001, "iou": 0.7, "max_det": 300,
+                "device": "cpu", "batch": 1, "half": False, "augment": False, "rect": False}
     model = YOLO(str(detector_weights))
-    measure("detection", lambda sample: model(str(dataset.root / sample["image_path"]), verbose=False))
+    measure("detection", lambda sample: model(str(dataset.root / sample["image_path"]), **settings, verbose=False))
 
     engine = EasyOCREngine(easyocr_weights, manifest)
     for mode in MODES:

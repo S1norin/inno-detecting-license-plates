@@ -18,10 +18,9 @@ def _fmt(value):
 def _metrics_table(overall):
     lines = ["| metric | value |", "| --- | --- |"]
     for key in ("image_count", "ground_truth_count", "tp", "fp", "fn",
-                "map50", "precision", "recall", "f1",
-                "count", "accepted", "coverage", "character_accuracy",
-                "plate_exact_match", "accepted_exact_accuracy",
-                "precision", "recall", "f1"):
+                "map50", "count", "accepted", "coverage",
+                "character_accuracy", "plate_exact_match",
+                "accepted_exact_accuracy", "precision", "recall", "f1"):
         if key in overall:
             lines.append(f"| {key} | {_fmt(overall[key])} |")
     return "\n".join(lines)

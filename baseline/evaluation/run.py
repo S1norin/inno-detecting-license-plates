@@ -41,7 +41,8 @@ def build_parser():
                         help="Number of images for the timing probe (default: 100).")
     parser.add_argument("--probe-seed", type=int, default=42,
                         help="Seed for the timing probe image sample (default: 42).")
-    parser.add_argument("--detector-weights", type=Path, default=Path("baseline/weights/detector.pt"),
+    parser.add_argument("--detector-weights", type=Path,
+                        default=Path("baseline/weights/license-plate-finetune-v1s.pt"),
                         help="YOLO weights for the timing probe only.")
     parser.add_argument("--easyocr-weights", type=Path, default=EASYOCR_WEIGHTS_DEFAULT,
                         help="Offline EasyOCR weights directory for the timing probe only.")
