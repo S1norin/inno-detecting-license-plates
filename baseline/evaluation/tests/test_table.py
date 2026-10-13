@@ -32,10 +32,10 @@ class TableTest(unittest.TestCase):
         self.assertEqual((val["tp"], val["fp"], val["fn"]), (8, 0, 0))
         self.assertEqual(val["f1"], 1.0)
         test = self.table["e1_detection"]["test"]["overall"]
-        self.assertEqual((test["tp"], test["fp"], test["fn"]), (2, 2, 2))
-        self.assertEqual(test["precision"], 0.5)
+        self.assertEqual((test["tp"], test["fp"], test["fn"]), (2, 1, 2))
+        self.assertEqual(test["precision"], 2 / 3)
         self.assertEqual(test["recall"], 0.5)
-        self.assertEqual(test["f1"], 0.5)
+        self.assertAlmostEqual(test["f1"], 4 / 7)
         # test tilts: p6=5 (0-9), p5=10 (10-19), p7=22, p8=40 (20+)
         by_tilt = self.table["e1_detection"]["test"]["by_tilt"]
         self.assertEqual(by_tilt["0-9"]["ground_truth_count"], 1)

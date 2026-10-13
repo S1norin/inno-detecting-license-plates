@@ -36,7 +36,7 @@ class PipelineTest(unittest.TestCase):
             for heading in ("E1 — Detection", "E2 — OCR-only", "E2b — End-to-end",
                             "E3 — Preprocessing ablation", "E6 —", "Failure cases", "Notes"):
                 self.assertIn(heading, report)
-            self.assertIn("miss, low_confidence", report)
+            self.assertIn("miss, low_iou, low_confidence", report)
             self.assertIn("no_detection", report)
 
             for module in ("torch", "ultralytics", "easyocr", "cv2"):

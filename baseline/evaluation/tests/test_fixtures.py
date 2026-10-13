@@ -32,10 +32,10 @@ class FixtureTreeTest(unittest.TestCase):
 
     def test_detection_test_matching_literals(self):
         overall = read_json(self.fixture["detection"] / "metrics_test.json")["overall"]
-        # Hand-checkable: p5 miss (score 0.15 < 0.25, not selected), p6
-        # low-IoU partial overlap (0.43, no match), p7 one TP + one FP, p8 TP
+        # Hand-checkable: p5 pure miss (no overlap), p6 low-IoU partial overlap
+        # (0.43, no match; score 0.15 < 0.25, not selected), p7 one TP + one FP, p8 TP
         self.assertEqual(overall["tp"], 2)
-        self.assertEqual(overall["fp"], 2)
+        self.assertEqual(overall["fp"], 1)
         self.assertEqual(overall["fn"], 2)
 
     def test_detection_val_all_matched(self):

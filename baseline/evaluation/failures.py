@@ -44,7 +44,8 @@ def _detection_case(record):
         tags.append("low_iou")
     if len(boxes) > len(truth):
         tags.append("multiple_detections")
-    if boxes and best_score < LOW_CONFIDENCE:
+    # Without any overlap best_score is a 0.0 sentinel, not a real score.
+    if boxes and best_iou > 0.0 and best_score < LOW_CONFIDENCE:
         tags.append("low_confidence")
     if not tags:
         return None

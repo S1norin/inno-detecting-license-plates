@@ -27,9 +27,10 @@ class FailuresTest(unittest.TestCase):
         self.assertEqual([c["image_path"] for c in cases],
                          ["images/test/p5_s100.jpg", "images/test/p6_s100.jpg", "images/test/p7_s100.jpg"])
         by_path = {c["image_path"]: c for c in cases}
-        self.assertEqual(by_path["images/test/p5_s100.jpg"]["tags"], ["miss", "low_confidence"])
+        self.assertEqual(by_path["images/test/p5_s100.jpg"]["tags"], ["miss"])
         self.assertEqual(by_path["images/test/p5_s100.jpg"]["details"]["best_iou"], 0.0)
-        self.assertEqual(by_path["images/test/p6_s100.jpg"]["tags"], ["miss", "low_iou"])
+        self.assertEqual(by_path["images/test/p6_s100.jpg"]["tags"], ["miss", "low_iou", "low_confidence"])
+        self.assertEqual(by_path["images/test/p6_s100.jpg"]["details"]["best_score"], 0.15)
         self.assertAlmostEqual(by_path["images/test/p6_s100.jpg"]["details"]["best_iou"], 420 / 980, delta=1e-4)
         self.assertEqual(by_path["images/test/p7_s100.jpg"]["tags"], ["multiple_detections"])
         self.assertEqual(by_path["images/test/p7_s100.jpg"]["details"]["prediction_count"], 2)
