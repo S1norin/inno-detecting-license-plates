@@ -51,7 +51,10 @@ def stage_stats(times_ms):
 def max_rss_mb():
     import resource
 
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if platform.system() == "Darwin":
+        return rss / (1024.0 * 1024.0)
+    return rss / 1024.0
 
 
 def _environment():
