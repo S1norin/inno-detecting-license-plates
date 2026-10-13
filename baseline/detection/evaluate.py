@@ -30,7 +30,8 @@ def load_dataset(config, split):
         raise ValueError("Dataset must define one license_plate class (class 0)")
     root = Path(document.get("path", config.parent))
     if not root.is_absolute():
-        root = (config.parent / root).resolve()
+        root = config.parent / root
+    root = root.resolve()
     if not root.is_dir():
         raise FileNotFoundError(f"Dataset root missing: {root}. Run python data/configure_paths.py first.")
     listing = root / document[split]
