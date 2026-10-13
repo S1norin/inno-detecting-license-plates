@@ -231,7 +231,8 @@ class SelectionTests(unittest.TestCase):
 
     def test_ocr_setup_preserves_shared_pins_and_defaults_to_inspection(self):
         pins = combined_pins()
-        self.assertEqual(pins["torch"], "2.6.0+cpu")
+        expected_torch = "2.6.0" if sys.platform == "darwin" else "2.6.0+cpu"
+        self.assertEqual(pins["torch"], expected_torch)
         self.assertEqual(pins["matplotlib"], "3.10.3")
         self.assertEqual(pins["easyocr"], "1.7.2")
         with patch("baseline.ocr.setup.ensure_environment") as install:
