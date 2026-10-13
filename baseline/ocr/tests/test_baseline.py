@@ -16,7 +16,7 @@ from baseline.ocr.engine import WEIGHT_FILES, EasyOCREngine, verify_weights
 from baseline.ocr.evaluate import evaluate_test, evaluate_validation, model_contract, select_validation
 from baseline.ocr.export_train import export_training
 from baseline.ocr.io import digest, load_samples, validate_raw, write_json
-from baseline.ocr.metrics import edit_distance, evaluate
+from baseline.ocr.metrics import edit_distance, evaluate, tilt_bin
 from baseline.ocr.run import run_inference
 from baseline.ocr.setup import combined_pins, prepare
 
@@ -67,6 +67,12 @@ class MetricTests(unittest.TestCase):
     def test_normalization_and_insertion_distance(self):
         self.assertEqual(edit_distance("ABC", "ABXC"), 1)
         self.assertEqual(evaluate([record(" 皖a12345 ")], 0.5)["overall"]["plate_exact_match"], 1)
+
+    def test_tilt_bin_matches_detection_convention(self):
+        self.assertEqual([tilt_bin(x) for x in (0, 9, 10, 19, 20, 90)],
+                         ["0-9", "0-9", "10-19", "10-19", "20+", "20+"])
+        with self.assertRaises(ValueError):
+            tilt_bin(-1)
 
     def test_scores_and_log_threshold_domain(self):
         self.assertAlmostEqual(plate_score([0.8, 0.5]), 0.65)

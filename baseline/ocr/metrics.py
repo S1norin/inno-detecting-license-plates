@@ -10,8 +10,8 @@ TILT_BINS = ("0-9", "10-19", "20+")
 
 def tilt_bin(value):
     value = float(value)
-    if not math.isfinite(value):
-        raise ValueError("Tilt must be finite")
+    if not math.isfinite(value) or value < 0:
+        raise ValueError(f"Invalid tilt magnitude: {value}")
     if value < 10:
         return "0-9"
     if value < 20:
