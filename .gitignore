@@ -16,6 +16,12 @@ baseline/detection/results/
 # Local copy of the prepared Telegram dataset archive
 CCPD_Data_Preprocessing.zip
 
+# Regenerable notebook run outputs (see data/README.md)
+data/dataset_run_*/
+
+# Ultralytics label cache
+data/dataset/labels/*.cache
+
 # Evaluation run artifacts (regenerable; the tracked REPORT.md and the
 # committed summary figure are copies from the latest accepted run)
 baseline/evaluation/results/
