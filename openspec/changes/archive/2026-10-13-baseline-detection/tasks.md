@@ -17,17 +17,17 @@ succeed against the manifest sha256.
 
 _Deferred to the follow-up detection PR; this PR ships section 1 only._
 
-- [ ] 2.1 Implement `baseline/detection/evaluate.py` (`--split {val,test}`): load the hash-verified weights, run CPU inference over all split images, and verify `predictions_<split>.json` contains one record per split image with boxes and scores
-- [ ] 2.2 Implement `baseline/detection/metrics.py`: single-class IoU matching at 0.5, overall mAP@0.5 / precision / recall / F1@0.5, per size bucket and per tilt bin (0-9, 10-19, 20+) joined from `metadata.csv`, and verify overall mAP@0.5 matches ultralytics' built-in `val()` on the same split within 0.01
-- [ ] 2.3 Run evaluation on val and test, writing `metrics_<split>.json` with model id, weight sha256, dataset config, split, and timestamp, and verify each file contains all traceability fields
-- [ ] 2.4 Re-run the evaluation and verify the metrics are identical to the previous run
+- [x] 2.1 Implement `baseline/detection/evaluate.py` (`--split {val,test}`): load the hash-verified weights, run CPU inference over all split images, and verify `predictions_<split>.json` contains one record per split image with boxes and scores
+- [x] 2.2 Implement `baseline/detection/metrics.py`: single-class IoU matching at 0.5, overall mAP@0.5 / precision / recall / F1@0.5, per size bucket and per tilt bin (0-9, 10-19, 20+) joined from `metadata.csv`, and verify overall mAP@0.5 matches ultralytics' built-in `val()` on the same split within 0.01
+- [x] 2.3 Run evaluation on val and test, writing `metrics_<split>.json` with model id, weight sha256, dataset config, split, and timestamp, and verify each file contains all traceability fields
+- [x] 2.4 Re-run the evaluation and verify the metrics are identical to the previous run
 
 ## 3. Fine-tuning readiness and documentation
 
 _Deferred to the follow-up detection PR; this PR ships section 1 only._
 
-- [ ] 3.1 Add `baseline/detection/train_config.yaml` (cached weight path, `dataset_original.yaml`, default hyperparameters) and verify it parses and every referenced path exists
-- [ ] 3.2 Write `baseline/detection/README.md` with exact run instructions (env setup, evaluation, outputs) and verify each documented command runs as written from a clean checkout
+- [x] 3.1 Add `baseline/detection/train_config.yaml` (cached weight path, `dataset_original.yaml`, default hyperparameters) and verify it parses and every referenced path exists
+- [x] 3.2 Write `baseline/detection/README.md` with exact run instructions (env setup, evaluation, outputs) and verify each documented command runs as written from a clean checkout
 
 ## Workflow follow-up
 
