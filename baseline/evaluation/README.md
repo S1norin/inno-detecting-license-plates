@@ -103,13 +103,8 @@ level are copies of the latest accepted run's artifacts.
   sample id). Recognition cases come from validation so the test split stays
   untouched.
 - Full-split per-image timing (all 1500 val+test images) is intentionally not
-  done here; it is tracked as a follow-up issue: "Full-split timing with
-  per-image breakdowns" (see TODO in `openspec/changes/baseline-evaluation-stack/tasks.md` §6.3).
-
-## TODO
-
-- [ ] Full-split timing with per-image breakdowns — tracked as a GitHub issue
-  ("Full-split timing with per-image breakdowns"); link it here once created.
+  done here; it is tracked as a follow-up issue:
+  [Full-split timing with per-image breakdowns](https://github.com/S1norin/inno-detecting-license-plates/issues/14).
 
 ## Tests
 

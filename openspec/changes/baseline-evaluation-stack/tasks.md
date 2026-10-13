@@ -22,19 +22,19 @@
 ## 4. Sampled timing probe
 
 - [x] 4.1 Implement the probe sample selection (`random.Random(seed).sample` over the original-scale image list, default N=100, seed 42, sample ids recorded) and verify a test shows the same seed and size select the identical image set and a different seed does not
-- [ ] 4.2 Implement stage timing (detection inference; OCR recognition per preprocessing mode on GT crops; preprocessing per mode) with the frozen inference settings, a 5-image warmup excluded and reported, per-stage median/p95 wall-clock latency and cumulative process max RSS, with torch/ultralytics/easyocr imported only inside the probe code path, and verify `--no-probe` completes fully offline without the baseline venv and a small real probe (N=10) writes a self-describing `timing.json` (per-stage stats, sample size, seed, settings)
+- [x] 4.2 Implement stage timing (detection inference; OCR recognition per preprocessing mode on GT crops; preprocessing per mode) with the frozen inference settings, a 5-image warmup excluded and reported, per-stage median/p95 wall-clock latency and cumulative process max RSS, with torch/ultralytics/easyocr imported only inside the probe code path, and verify `--no-probe` completes fully offline without the baseline venv and a small real probe (N=10) writes a self-describing `timing.json` (per-stage stats, sample size, seed, settings)
 - [x] 4.3 Verify probe safety: after a probe run, all frozen input files have unchanged digests (asserted in a test or documented check)
 
 ## 5. Report, figure, and end-to-end CLI
 
 - [x] 5.1 Render `REPORT.md` from `table.json` (markdown tables plus interpretation paragraphs assembled from the numbers) and verify a fixture run produces a deterministic report whose tables match the hand-computed values
 - [x] 5.2 Render the single committed 2x2 figure (detection mAP50/F1 by bucket; OCR char-accuracy and exact match by bucket per protocol; accuracy-coverage curves at selected tau; per-tilt-bin comparison) as a 160 dpi PNG and verify the file is produced and regenerated identically from the same table
-- [ ] 5.3 Wire the full `run` CLI (including `--probe-n`, `--probe-seed`, defaults for report and figure paths under `baseline/evaluation/`) and verify an end-to-end run against the real frozen results with `--no-probe` produces the complete artifact set and the table matches the numbers in the committed detection and OCR REPORT.md files
+- [x] 5.3 Wire the full `run` CLI (including `--probe-n`, `--probe-seed`, defaults for report and figure paths under `baseline/evaluation/`) and verify an end-to-end run against the real frozen results with `--no-probe` produces the complete artifact set and the table matches the numbers in the committed detection and OCR REPORT.md files
 - [x] 5.4 Add `.gitignore` for `baseline/evaluation/results/` and verify after a run that `git status` shows only the new tracked report and figure
 
 ## 6. Real run, documentation, and follow-up
 
-- [ ] 6.1 Run the full stack on the real frozen results including the probe (N=100) and commit `baseline/evaluation/REPORT.md` and the figure, and verify the committed table matches both stage reports and the probe latencies are plausible for the CPU box
-- [ ] 6.2 Write `baseline/evaluation/README.md` with exact run instructions, output layout, probe methodology (sample, warmup, cumulative RSS), and limitations, and verify every documented command runs as written
-- [ ] 6.3 Record the deferred full-split re-run with per-image timing as a follow-up (README TODO plus a GitHub issue) and verify the issue exists and the README links it
+- [x] 6.1 Run the full stack on the real frozen results including the probe (N=100) and commit `baseline/evaluation/REPORT.md` and the figure, and verify the committed table matches both stage reports and the probe latencies are plausible for the CPU box
+- [x] 6.2 Write `baseline/evaluation/README.md` with exact run instructions, output layout, probe methodology (sample, warmup, cumulative RSS), and limitations, and verify every documented command runs as written
+- [x] 6.3 Record the deferred full-split re-run with per-image timing as a follow-up (README TODO plus a GitHub issue) and verify the issue exists and the README links it
 - [x] 6.4 Run the full test suite and linter and verify `python -m unittest discover -s baseline -v` passes and `uv run ruff check .` is clean
