@@ -16,7 +16,7 @@ def validate_config(config, data=None):
         raise ValueError("Training model must reference the verified cached detector")
     dataset = Path(data) if data else ROOT / document["data"]
     for name in ("epochs", "batch", "imgsz"):
-        if not isinstance(document[name], int) or document[name] <= 0:
+        if isinstance(document[name], bool) or not isinstance(document[name], int) or document[name] <= 0:
             raise ValueError(f"Training {name} must be a positive integer")
     _, paths, _, _, _ = load_dataset(dataset, "train")
     return {"model": str(model), "data": str(dataset.resolve()), "train_images": len(paths)}
