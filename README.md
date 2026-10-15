@@ -12,10 +12,21 @@ Team computer-vision project: detecting and recognizing Chinese license plates, 
 | `data/` | Data pipeline: preparation notebook, preprocessing module, source images (LFS), prepared dataset |
 | `data/dataset/` | Ready-to-train dataset: YOLO labels, metadata, OCR tables, dataset configs, plots |
 | `data/source_data/` | 5,000 unique CCPD2019 source images (Git LFS) plus selection records and checksums |
-| `baseline/detection/`, `baseline/ocr/` | Model code (in progress) |
-| `docs/` | Project plan and course guidelines (PDF) |
+| `baseline/` | Baselines and shared infrastructure: YOLO11s detection, EasyOCR recognition, combined evaluation, pinned environment and weights |
+| `openspec/` | Planning artifacts: capability specs in `specs/`, in-flight changes in `changes/`, completed ones in `changes/archive/` |
+| `docs/` | Project plan and course guidelines (PDF), schedule, progress report |
 
 Start with [`data/README.md`](data/README.md) for dataset format, split policy, limitations, and per-teammate usage notes.
+For baseline results and reproduction: [`baseline/detection/README.md`](baseline/detection/README.md), [`baseline/ocr/README.md`](baseline/ocr/README.md), [`baseline/evaluation/README.md`](baseline/evaluation/README.md).
+
+## OpenSpec
+
+Features and experiments are planned as OpenSpec changes: durable capability
+specs live in `openspec/specs/`, and each change (proposal, spec deltas,
+design, tasks) lives in `openspec/changes/` until it is archived. New work
+starts with `/openspec-propose`, is implemented from the change's tasks
+(`/openspec-apply-change`), and is archived after merge
+(`/openspec-archive-change`).
 
 ## Getting the data
 
@@ -25,7 +36,7 @@ regenerated locally from the source images.
 
 1. Install the [git-lfs](https://git-lfs.com) client once: `git lfs install`
 2. Clone normally; LFS files are pulled automatically.
-3. Regenerate the dataset images and crops (~6 min, Python 3.13 per `.python-version`):
+3. Regenerate the dataset images and crops (~6 min, Python 3.12 per `.python-version`):
 
    ```bash
    rm -rf data/dataset

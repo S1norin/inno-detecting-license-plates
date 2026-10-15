@@ -9,6 +9,17 @@ Detection is single-class YOLO bounding boxes; recognition is OCR on
 ground-truth plate crops with three preprocessing ablations.
 Human-facing docs: `README.md`, `CONTRIBUTING.md`, `data/README.md`.
 
+## OpenSpec
+
+- Planning artifacts live in `openspec/`: durable capability specs in
+  `openspec/specs/`, in-flight changes (proposal, spec deltas, design, tasks)
+  in `openspec/changes/`.
+- New features and experiments start as a change (`/openspec-propose`), are
+  implemented from its tasks (`/openspec-apply-change`), and are archived
+  after merge (`/openspec-archive-change`).
+- Read the active change's artifacts before implementing, keep them in sync
+  when decisions change, and validate with `openspec validate <change>`.
+
 ## Environment
 
 - Python 3.12 in `.venv` (uv project; `.python-version` pins 3.12).
