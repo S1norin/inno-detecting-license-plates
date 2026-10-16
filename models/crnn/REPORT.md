@@ -101,5 +101,7 @@ matches the documented training and evaluation commands.
 
 Final checks: 99 existing baseline tests and 16 new CRNN tests passed;
 `uv run ruff check .` and `git diff --check` passed. Tracked dataset files
-are unchanged. The OpenSpec CLI is not installed on this machine, so
-`openspec validate crnn-recognizer` remains an unavailable tooling check.
+are unchanged. OpenSpec CLI 1.14.1 is installed as a workspace development
+tool; `openspec validate crnn-recognizer --strict --json` passed with no
+issues. The real-crop smoke cache for the selected 256-wide checkpoint is
+`results/integration-smoke-h256/raw_val_none.json`.
