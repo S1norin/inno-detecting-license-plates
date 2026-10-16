@@ -19,7 +19,7 @@ class ModelConfig:
     input_width: int = 256
     cnn_channels: tuple[int, ...] = (32, 64, 128, 128)
     projection_size: int = 256
-    hidden_size: int = 128
+    hidden_size: int = 256
     recurrent_layers: int = 2
     num_classes: int = 59
 

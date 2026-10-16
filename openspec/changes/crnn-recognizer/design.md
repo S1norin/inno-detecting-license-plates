@@ -41,18 +41,18 @@ CNN:    conv3x3 1->32   + BN + ReLU + maxpool2   (24 x 128)
         conv3x3 64->128 + BN + ReLU + maxpool2   (6 x 32)
         conv3x3 128->128+ BN + ReLU + maxpool2   (3 x 16)
 sequence: (B,128,3,16) -> (B,16,384) -> Linear(384,256)
-RNN:    BiLSTM x2, hidden 128 -> 256
-output: Linear(256, 59)   (58 chars + blank, blank=0 per charset.json)
+RNN:    BiLSTM x2, hidden 256 -> 512
+output: Linear(512, 59)   (58 chars + blank, blank=0 per charset.json)
 loss:   nn.CTCLoss(blank=0), per-sample target lengths
 ```
 
-1,145,211 parameters. The original draft's hidden size 256 totals 2,999,419 parameters; hidden size 128 meets issue #16's approximately 1.1M target while preserving the required output shape. Sequence length 16 exceeds the plate target lengths, including repeated-character CTC constraints. Right padding preserves left-to-right character order. Exceptionally wide crops fit inside H48/W256 with bottom padding as well, preserving aspect ratio. Alternatives: taller 64px input (more data for small plates, ~2x compute) and pretrained backbones (breaks the CPU-only, no-download constraint); both rejected for the deadline and single-factor comparison.
+2,999,419 parameters. The user explicitly selected the original hidden size 256, superseding issue #16's inconsistent approximately 1.1M estimate. The output remains `(B,16,59)`. Sequence length 16 exceeds the plate target lengths, including repeated-character CTC constraints. Right padding preserves left-to-right character order. Exceptionally wide crops fit inside H48/W256 with bottom padding as well, preserving aspect ratio. Alternatives: taller 64px input (more data for small plates, ~2x compute) and pretrained backbones (breaks the CPU-only, no-download constraint); both rejected for the deadline and single-factor comparison.
 
 ### D3: Training loop
 
 - Data: `load_samples(dataset, "train", 1.0)` (3,500 crops), charset verified equal to `build_charset(ocr_train.csv)` before start (same guard `export_train.py` uses).
 - Images loaded on the fly (`cv2.imread` + resize), `num_workers=0`, batch 32; avoids a separate tensor cache and keeps the dataset the single source of truth.
-- `torch.manual_seed(42)`, `torch.set_num_threads(1)`, `torch.use_deterministic_algorithms(True)`, Adam lr 1e-3, fixed epoch count 50. The measured 52.6166-second epoch probe implies about 43.8 minutes for the later full run; the requested count for each run is recorded in its training record (2 for reproducibility checks, 50 for the full run).
+- `torch.manual_seed(42)`, `torch.set_num_threads(1)`, `torch.use_deterministic_algorithms(True)`, Adam lr 1e-3, fixed epoch count 50. The hidden-size-256 probe measured 57.0776 seconds per epoch, implying about 47.6 minutes for the later full run; the requested count for each run is recorded in its training record (2 for reproducibility checks, 50 for the full run).
 - Every epoch: greedy decode of the full 700-sample validation split with the existing `decode_greedy`; character accuracy computed with the same `1 - edit_distance / max(len)` formula as `metrics.py`.
 - Keep the best checkpoint by validation character accuracy, ties to the earlier epoch. No early stopping, no scheduler: selection is a pure post-hoc rule, which keeps the loop deterministic and auditable.
 
@@ -90,7 +90,7 @@ Compact tracked `models/crnn/REPORT.md` (config, training curve summary, per-pro
 ## Risks / Trade-offs
 
 - [CPU training time exceeds the week's budget] -> First task is a 1-epoch timing probe; if 1 thread is too slow, raise the batch to 64 (fewer, larger steps) before considering 4 fixed threads; the epoch count is fixed after the probe and recorded.
-- [Overfitting: 1.15M parameters on 3,500 crops] -> The model is deliberately small; the per-epoch validation curve is recorded. A future hidden-size reduction must be agreed before test evaluation.
+- [Overfitting: 3M parameters on 3,500 crops] -> The per-epoch validation curve is recorded. The user chose hidden size 256; a future reduction must be agreed before test evaluation.
 - [Small plates (<=83 px) lose detail when resized to height 48] -> Expected to show in the per-bucket metrics; that is a finding for the report, not a defect to fix in this change.
 - [Canny/gray_contrast modes are semantically odd for a trained model] -> Kept only because `select_validation` requires all three modes; the selection is expected to pick `none`, and the ablation numbers are reported, not hidden.
 - [torch.save bit-identity depends on the torch build] -> Bounded by recording the exact torch version and machine in the training record; the reproducibility claim is "same environment", matching how the rest of the repo pins runs.
