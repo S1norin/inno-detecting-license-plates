@@ -9,10 +9,10 @@ No test inference or test-based model selection was performed here.
 
 The grayscale CRNN uses four Conv/BN/ReLU/pool blocks with widths
 32/64/128/128, a 384-to-256 sequence projection, two bidirectional LSTM
-layers with hidden size 128, and a 256-to-59 classifier. It has **1,145,211
-parameters** and returns `(B, 16, 59)` logits. The draft's hidden size 256
-would give 2,999,419 parameters, so size 128 meets issue #16's approximately
-1.1M target; the design has been corrected accordingly.
+layers with hidden size 256, and a 512-to-59 classifier. It has **2,999,419
+parameters** and returns `(B, 16, 59)` logits. The user explicitly selected
+the original hidden size 256, superseding issue #16's inconsistent ~1.1M
+estimate. The design and tests use the correct ~3M parameter count.
 
 Inputs preserve aspect ratio within H48/W256, use black right padding
 (and bottom padding for exceptionally wide crops), and normalize grayscale
@@ -30,18 +30,18 @@ are used, and no tracked file under `data/dataset/` was modified.
 
 ## Timing and fixed full-run configuration
 
-On 16 October 2026, the one-epoch probe on the real data measured **52.6166
-seconds per epoch**, including full validation, and **80.5894 seconds total**,
+On 16 October 2026, the hidden-size-256 probe on the real data measured **57.0776
+seconds per epoch**, including full validation, and **66.7246 seconds total**,
 including setup and input fingerprinting. The final full-training count is
-fixed at **50 epochs** (the CLI default), roughly **43.8 minutes** based on
+fixed at **50 epochs** (the CLI default), roughly **47.6 minutes** based on
 the probe; this is an estimate, not a completed full-run measurement.
 
 Configuration: CPU only; one Torch/OpenCV thread; seed 42; deterministic
 algorithms; batch 32; Adam lr 0.001, betas (0.9, 0.999), eps 1e-8, no weight
 decay; CTC blank 0; no scheduler, early stopping, or augmentation. Runtime:
 Python 3.12.10, Torch 2.6.0+cpu, Torchvision 0.21.0+cpu, NumPy 2.1.3,
-OpenCV 4.11.0, AMD Ryzen 7 7700X. No new packages or pretrained assets were
-installed or downloaded for this work.
+OpenCV 4.11.0, AMD Ryzen 7 7700X. No Python packages or pretrained assets were
+added. OpenSpec CLI 1.14.1 was installed as a separate workspace development tool.
 
 Each epoch records training CTC loss, greedy-decoded validation character
 accuracy (the shared edit-distance formula), and plate exact match. The
@@ -61,22 +61,21 @@ bytes. Saving through a file object fixes the internal Torch ZIP archive name.
 Two independent two-epoch CLI runs used all 3,500 training and 700 validation
 originals with identical configuration. Both checkpoint files have SHA-256:
 
-`f63e98d015aecd6f0eec8d6c4e5f2afdea105932b9f993be690d34da99057dac`
+`0b5aae42ad39c911868e48cc33f66986a54f0f18af42d6f25c2fedc2864ab998`
 
 Their complete per-epoch numerical metrics match exactly:
 
 | Epoch | Mean training CTC loss | Val character accuracy | Val exact match |
 |---|---:|---:|---:|
-| 1 | 3.0633293640 | 0.2655102041 | 0.0000000000 |
-| 2 | 2.6226538051 | 0.2655102041 | 0.0000000000 |
+| 1 | 2.8945722376 | 0.2655102041 | 0.0000000000 |
+| 2 | 2.6018353865 | 0.2655102041 | 0.0000000000 |
 
-Both select epoch 1, correctly breaking the validation tie in favor of the
-earlier epoch. These short runs verify the training machinery and are not
+Both select epoch 1, correctly retaining the earlier epoch on a validation tie. These short runs verify the training machinery and are not
 the final trained CRNN or a baseline-comparison result. Same-machine byte
 identity is bounded by the recorded pinned environment and CPU configuration.
 
-The probe and both reproducibility runs are under `results/timing-probe/`,
-`results/reproducibility-a/`, and `results/reproducibility-b/`, each containing
+The probe and both reproducibility runs are under `results/timing-probe-h256/`,
+`results/reproducibility-h256-a/`, and `results/reproducibility-h256-b/`, each containing
 `checkpoint.pt` and `training_record.json`. All generated artifacts are
 gitignored. Unit tests also check ties, output-overwrite refusal, charset
 mismatch, unseen validation characters, and that training never opens the

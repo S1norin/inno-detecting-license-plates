@@ -52,7 +52,7 @@ loss:   nn.CTCLoss(blank=0), per-sample target lengths
 
 - Data: `load_samples(dataset, "train", 1.0)` (3,500 crops), charset verified equal to `build_charset(ocr_train.csv)` before start (same guard `export_train.py` uses).
 - Images loaded on the fly (`cv2.imread` + resize), `num_workers=0`, batch 32; avoids a separate tensor cache and keeps the dataset the single source of truth.
-- `torch.manual_seed(42)`, `torch.set_num_threads(1)`, `torch.use_deterministic_algorithms(True)`, Adam lr 1e-3, fixed epoch count 50. The measured 52.6166-second epoch probe implies about 43.8 minutes for the later full run; the requested count for each run is recorded in its training record (2 for reproducibility checks, 50 for the full run).
+- `torch.manual_seed(42)`, `torch.set_num_threads(1)`, `torch.use_deterministic_algorithms(True)`, Adam lr 1e-3, fixed epoch count 50. The hidden-size-256 probe measured 57.0776 seconds per epoch, implying about 47.6 minutes for the later full run; the requested count for each run is recorded in its training record (2 for reproducibility checks, 50 for the full run).
 - Every epoch: greedy decode of the full 700-sample validation split with the existing `decode_greedy`; character accuracy computed with the same `1 - edit_distance / max(len)` formula as `metrics.py`.
 - Keep the best checkpoint by validation character accuracy, ties to the earlier epoch. No early stopping, no scheduler: selection is a pure post-hoc rule, which keeps the loop deterministic and auditable.
 
