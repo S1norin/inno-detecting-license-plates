@@ -20,7 +20,8 @@ class ModelTests(unittest.TestCase):
         with torch.inference_mode():
             result = model(torch.randn(2, 1, 48, 256))
         self.assertEqual(tuple(result.shape), (2, 16, 59))
-        self.assertTrue(1_000_000 < sum(p.numel() for p in model.parameters()) < 1_200_000)
+        self.assertEqual(model.config.hidden_size, 256)
+        self.assertEqual(sum(p.numel() for p in model.parameters()), 2_999_419)
 
     def test_aspect_preserving_transform_and_padding(self):
         result = transform_image(np.full((24, 72, 3), 255, dtype=np.uint8))
