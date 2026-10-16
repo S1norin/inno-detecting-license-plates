@@ -14,10 +14,10 @@
 
 ## 3. Engine and runner integration
 
-- [ ] 3.1 Implement `CRNNEngine` in `models/crnn/engine.py` (digest-verified checkpoint load, `identity`, `weight_digests`, `recognize` via softmax + the existing `decode_greedy`, 1-thread deterministic inference) and verify unit tests pass: construction rejects a mismatched sha256, `recognize` on real validation crops returns text with one finite confidence per emitted character, and `identity` carries the required fields
-- [ ] 3.2 Add `--engine {easyocr,crnn}` (default `easyocr`) plus `--crnn-checkpoint` and `--crnn-expected-sha256` to `baseline/ocr/run.py` and verify the existing test suite still passes for the EasyOCR default while a CRNN inference pass over a few samples produces a cache that passes `validate_raw`
-- [ ] 3.3 Update `baseline/ocr/README.md` with CRNN training and evaluation usage and verify the documented commands match the implemented CLIs
-- [ ] 3.4 Update the model-code location line in `AGENTS.md` to point non-baseline model code to `models/` and verify the file names both `baseline/` and `models/` correctly
+- [x] 3.1 Implement `CRNNEngine` in `models/crnn/engine.py` (digest-verified checkpoint load, `identity`, `weight_digests`, `recognize` via softmax + the existing `decode_greedy`, 1-thread deterministic inference) and verify unit tests pass: construction rejects a mismatched sha256, `recognize` on real validation crops returns text with one finite confidence per emitted character, and `identity` carries the required fields
+- [x] 3.2 Add `--engine {easyocr,crnn}` (default `easyocr`) plus `--crnn-checkpoint` and `--crnn-expected-sha256` to `baseline/ocr/run.py` and verify the existing test suite still passes for the EasyOCR default while a CRNN inference pass over a few samples produces a cache that passes `validate_raw`
+- [x] 3.3 Update `baseline/ocr/README.md` with CRNN training and evaluation usage and verify the documented commands match the implemented CLIs
+- [x] 3.4 Update the model-code location line in `AGENTS.md` to point non-baseline model code to `models/` and verify the file names both `baseline/` and `models/` correctly
 
 ## 4. Full evaluation run and report
 
