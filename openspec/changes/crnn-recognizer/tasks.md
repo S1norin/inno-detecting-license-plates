@@ -2,9 +2,9 @@
 
 ## 1. Model and training data
 
-- [ ] 1.1 Create branch `feat/crnn-recognizer` from `main` and verify `git branch --show-current` prints it
-- [ ] 1.2 Add the top-level `models/` package and `models/crnn/` subpackage (`models/__init__.py`, `models/crnn/__init__.py`, nested `.gitignore` ignoring `results/`) with `model.py` (architecture per design D2, grayscale H48/W256 aspect-preserving right-pad input transform, checkpoint save/load carrying charset digest and config) and verify unit tests pass: forward on a random batch yields `(B, 16, 59)` logits, parameter count is ~1.1M, input transform on a synthetic crop yields `(1, 48, 256)`, checkpoint round-trips
-- [ ] 1.3 Add training-data assembly to `models/crnn/train.py` (load scale-1.0 train samples, refuse to start unless the charset equals `build_charset(ocr_train.csv)`, build CTC targets and lengths) and verify a test on the real dataset confirms 3,500 samples, all at scale 1.0, all targets inside the charset
+- [x] 1.1 Create branch `feat/crnn-recognizer` from `main` and verify `git branch --show-current` prints it
+- [x] 1.2 Add the top-level `models/` package and `models/crnn/` subpackage (`models/__init__.py`, `models/crnn/__init__.py`, nested `.gitignore` ignoring `results/`) with `model.py` (architecture per design D2, grayscale H48/W256 aspect-preserving right-pad input transform, checkpoint save/load carrying charset digest and config) and verify unit tests pass: forward on a random batch yields `(B, 16, 59)` logits, parameter count is ~1.1M, input transform on a synthetic crop yields `(1, 48, 256)`, checkpoint round-trips
+- [x] 1.3 Add training-data assembly to `models/crnn/train.py` (load scale-1.0 train samples, refuse to start unless the charset equals `build_charset(ocr_train.csv)`, build CTC targets and lengths) and verify a test on the real dataset confirms 3,500 samples, all at scale 1.0, all targets inside the charset
 
 ## 2. Training loop
 
