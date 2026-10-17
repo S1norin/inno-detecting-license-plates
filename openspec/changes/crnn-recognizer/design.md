@@ -46,7 +46,7 @@ output: Linear(512, 59)   (58 chars + blank, blank=0 per charset.json)
 loss:   nn.CTCLoss(blank=0), per-sample target lengths
 ```
 
-About 1.1M parameters. Sequence length 16 comfortably exceeds the longest plate (7 characters). Right padding preserves left-to-right character order. Alternatives: taller 64px input (more data for small plates, ~2x compute) and pretrained backbones (breaks the CPU-only, no-download constraint); both rejected for the deadline and single-factor comparison.
+2,999,419 parameters. The user explicitly selected the original hidden size 256, superseding issue #16's inconsistent approximately 1.1M estimate. The output remains `(B,16,59)`. Sequence length 16 exceeds the plate target lengths, including repeated-character CTC constraints. Right padding preserves left-to-right character order. Exceptionally wide crops fit inside H48/W256 with bottom padding as well, preserving aspect ratio. Alternatives: taller 64px input (more data for small plates, ~2x compute) and pretrained backbones (breaks the CPU-only, no-download constraint); both rejected for the deadline and single-factor comparison.
 
 ### D3: Training loop
 
@@ -90,7 +90,7 @@ Compact tracked `models/crnn/REPORT.md` (config, training curve summary, per-pro
 ## Risks / Trade-offs
 
 - [CPU training time exceeds the week's budget] -> First task is a 1-epoch timing probe; if 1 thread is too slow, raise the batch to 64 (fewer, larger steps) before considering 4 fixed threads; the epoch count is fixed after the probe and recorded.
-- [Overfitting: 1.1M parameters on 3,500 crops] -> The model is deliberately small; the per-epoch validation curve is recorded, and the documented fallback is hidden 256 -> 128 (~0.5M params).
+- [Overfitting: 3M parameters on 3,500 crops] -> The per-epoch validation curve is recorded. The user chose hidden size 256; a future reduction must be agreed before test evaluation.
 - [Small plates (<=83 px) lose detail when resized to height 48] -> Expected to show in the per-bucket metrics; that is a finding for the report, not a defect to fix in this change.
 - [Canny/gray_contrast modes are semantically odd for a trained model] -> Kept only because `select_validation` requires all three modes; the selection is expected to pick `none`, and the ablation numbers are reported, not hidden.
 - [torch.save bit-identity depends on the torch build] -> Bounded by recording the exact torch version and machine in the training record; the reproducibility claim is "same environment", matching how the rest of the repo pins runs.
