@@ -80,3 +80,28 @@ The probe and both reproducibility runs are under `results/timing-probe-h256/`,
 gitignored. Unit tests also check ties, output-overwrite refusal, charset
 mismatch, unseen validation characters, and that training never opens the
 test CSV or a test crop.
+
+## Engine and runner integration
+
+The digest-verified `CRNNEngine` uses the shared `decode_greedy` and returns
+one finite confidence per emitted character. Its JSON-stable identity records
+architecture, geometry, selected epoch, vocabulary/source digests, and runtime
+versions; checkpoint content is the weight identity. A synthetic nonblank
+model tests the CTC/confidence contract and cache resume. The selected real
+short-run checkpoint was also exercised on three actual validation crops:
+confidence lengths and finiteness passed, the standard raw cache passed
+`validate_raw`, and repeating inference resumed that cache successfully.
+
+`baseline.ocr.run` adds `--engine {easyocr,crnn}` and the two required CRNN
+checkpoint flags. EasyOCR is the unchanged default; the shared
+`run_inference`, evaluation, and test-once machinery are unchanged. New tests
+cover digest mismatch, identity fields, raw-cache validity/resume, required
+flags, and EasyOCR default construction. Existing OCR tests pass. CLI help
+matches the documented training and evaluation commands.
+
+Final checks: 99 existing baseline tests and 16 new CRNN tests passed;
+`uv run ruff check .` and `git diff --check` passed. Tracked dataset files
+are unchanged. OpenSpec CLI 1.14.1 is installed as a workspace development
+tool; `openspec validate crnn-recognizer --strict --json` passed with no
+issues. The real-crop smoke cache for the selected 256-wide checkpoint is
+`results/integration-smoke-h256/raw_val_none.json`.

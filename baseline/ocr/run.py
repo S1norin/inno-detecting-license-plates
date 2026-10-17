@@ -131,7 +131,7 @@ def run_inference(args, engine):
     return cache
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--protocol", choices=PROTOCOLS, required=True)
     parser.add_argument("--split", choices=("val", "test"), required=True)
@@ -140,11 +140,21 @@ def main():
     parser.add_argument("--scale", type=float, choices=SCALES, default=1.0)
     parser.add_argument("--weights-directory", type=Path, default=Path("baseline/weights/easyocr"))
     parser.add_argument("--weights-manifest", type=Path, default=Path("baseline/common/models.json"))
+    parser.add_argument("--engine", choices=("easyocr", "crnn"), default="easyocr")
+    parser.add_argument("--crnn-checkpoint", type=Path)
+    parser.add_argument("--crnn-expected-sha256")
     parser.add_argument("--predictions", type=Path)
     parser.add_argument("--selection", type=Path)
     parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args()
-    engine = EasyOCREngine(args.weights_directory, args.weights_manifest)
+    args = parser.parse_args(argv)
+    if args.engine == "crnn":
+        if args.crnn_checkpoint is None or args.crnn_expected_sha256 is None:
+            parser.error("--engine crnn requires --crnn-checkpoint and --crnn-expected-sha256")
+        from models.crnn.engine import CRNNEngine
+
+        engine = CRNNEngine(args.crnn_checkpoint, args.crnn_expected_sha256)
+    else:
+        engine = EasyOCREngine(args.weights_directory, args.weights_manifest)
     run_inference(args, engine)
 
 
