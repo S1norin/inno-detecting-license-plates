@@ -8,9 +8,9 @@
 
 ## 2. Training loop
 
-- [ ] 2.1 Implement the deterministic CPU training loop in `train.py` (seed 42, 1 thread, deterministic mode, Adam lr 1e-3, batch 32, per-epoch greedy-decoded validation character accuracy, best-epoch selection with ties to the earlier epoch, checkpoint + `training_record.json` output) and verify a short 2-epoch run writes a record containing config, seed, thread count, library versions, dataset/charset digests, per-epoch validation metrics, selected epoch, and the checkpoint digest
-- [ ] 2.2 Run a 1-epoch timing probe and fix the final epoch count, recorded in the training record and design follow-through (report), verifying the probe duration is noted in `models/crnn/REPORT.md`
-- [ ] 2.3 Verify the determinism requirement: run the 2-epoch training twice from the same data and config and confirm both `checkpoint.pt` files have identical sha256 digests
+- [x] 2.1 Implement the deterministic CPU training loop in `train.py` (seed 42, 1 thread, deterministic mode, Adam lr 1e-3, batch 32, per-epoch greedy-decoded validation character accuracy, best-epoch selection with ties to the earlier epoch, checkpoint + `training_record.json` output) and verify a short 2-epoch run writes a record containing config, seed, thread count, library versions, dataset/charset digests, per-epoch validation metrics, selected epoch, and the checkpoint digest
+- [x] 2.2 Run a 1-epoch timing probe and fix the final epoch count, recorded in the training record and design follow-through (report), verifying the probe duration is noted in `models/crnn/REPORT.md`
+- [x] 2.3 Verify the determinism requirement: run the 2-epoch training twice from the same data and config and confirm both `checkpoint.pt` files have identical sha256 digests
 
 ## 3. Engine and runner integration
 
