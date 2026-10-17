@@ -21,11 +21,11 @@
 
 ## 4. Full evaluation run and report
 
-- [ ] 4.1 Run the full training with the fixed epoch count and verify `training_record.json` is complete and the best-epoch validation character accuracy is recorded
-- [ ] 4.2 Run the six validation inference passes (ocr_only and end_to-end, each in none/gray_contrast/canny, end-to-end with the frozen YOLO predictions) and verify all six caches pass `validate_raw` with 700 samples each
-- [ ] 4.3 Run `evaluate select` over the six validation caches and verify `selection.json` contains all three modes per protocol with the selected mode and tau
-- [ ] 4.4 Run test inference once per protocol under the saved selection, then the `evaluate val/test` reports and the selection plot, and verify the test-once reservation exists and the reports include per-size-bucket and per-tilt-bin metrics
-- [ ] 4.5 Write `models/crnn/REPORT.md` (config, timing probe, training curve summary, per-protocol metrics, CRNN-vs-EasyOCR comparison table using the existing baseline test numbers) and add the CRNN rows to `docs/progress_report.md` and `docs/progress_report.tex`, verifying every table value matches the saved report JSONs
+- [x] 4.1 Run the full training with the fixed epoch count and verify `training_record.json` is complete and the best-epoch validation character accuracy is recorded
+- [x] 4.2 Run the six validation inference passes (ocr_only and end_to-end, each in none/gray_contrast/canny, end-to-end with the frozen YOLO predictions) and verify all six caches pass `validate_raw` with 700 samples each
+- [x] 4.3 Run `evaluate select` over the six validation caches and verify `selection.json` contains all three modes per protocol with the selected mode and tau
+- [x] 4.4 Run test inference once per protocol under the saved selection, then the `evaluate val/test` reports and the selection plot, and verify the test-once reservation exists and the reports include per-size-bucket and per-tilt-bin metrics
+- [x] 4.5 Write `models/crnn/REPORT.md` (config, timing probe, training curve summary, per-protocol metrics, CRNN-vs-EasyOCR comparison table using the existing baseline test numbers) and add the CRNN rows to `docs/progress_report.md` and `docs/progress_report.tex`, verifying every table value matches the saved report JSONs
 
 ## Workflow follow-up
 
