@@ -98,5 +98,6 @@ Human-facing docs: `README.md`, `CONTRIBUTING.md`, `data/README.md`.
   from detector quality. End-to-end evaluation uses full test images with the
   detector's predicted boxes.
 - Tune on train, select on val, report test once.
-- Put model code and experiment notes in `baseline/detection/` or
-  `baseline/ocr/`.
+- Put off-the-shelf baseline code and notes in `baseline/detection/` or
+  `baseline/ocr/`. Put non-baseline model code and experiment notes in
+  `models/` (for example, `models/crnn/`).

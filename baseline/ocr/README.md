@@ -171,6 +171,90 @@ These guards prevent accidental reruns; they are not a replacement for the
 team agreement to report test once. Do not copy policies into new folders or
 delete reservations to tune against test outcomes.
 
+## CRNN model training and engine selection
+
+Issues #16–#18 add the team's CRNN under `models/crnn/`. This reuses the
+existing pinned CPU environment; no new packages or pretrained downloads
+are needed. EasyOCR remains the default when `--engine` is omitted.
+
+Prepare the existing crop dataset first. Training verifies the committed
+charset against `build_charset(ocr_train.csv)` and uses only the 3,500
+scale-1.0 train crops. The 700 validation originals select the epoch by
+greedy-decoded character accuracy, with ties going to the earlier epoch.
+No test CSV or test crop is read by training. Unknown validation characters
+remain in the ground truth without expanding the training vocabulary.
+
+From the repository root, run the fixed full configuration when ready for
+the full-training task group:
+
+```bash
+.venv-baseline/bin/python -m models.crnn.train \
+  --dataset data/dataset --epochs 50 \
+  --output models/crnn/results/full-training
+```
+
+Use `.venv-baseline/Scripts/python.exe` on Windows. To use the team's
+prepared dataset elsewhere, replace `--dataset data/dataset` with its root.
+That root must contain `metadata.csv`, `ocr_train.csv`, `ocr_val.csv`, and
+the original `crops_gt/train/` and `crops_gt/val/` files.
+
+Training is CPU-only, single-threaded and deterministic, with seed 42,
+batch 32 and Adam lr 0.001. It exposes `--epochs`, `--batch-size`,
+`--learning-rate`, `--seed`, `--charset` and `--dataset`, but no device flag.
+There is no early stopping or scheduler. A nonempty output directory is
+rejected; choose a new run directory instead of overwriting artifacts.
+The selected model is `checkpoint.pt`; `training_record.json` contains
+configuration, input digests, every epoch's metrics, selected epoch, and
+checkpoint SHA-256. See `models/crnn/REPORT.md` for the timing probe and
+the completed two-run reproducibility check. The 50-epoch run is separate
+from those short implementation-verification runs.
+
+Use the expected digest from the trusted training record for inference:
+
+```bash
+CRNN_SHA=$(.venv-baseline/bin/python -c \
+  "import json; print(json.load(open('models/crnn/results/full-training/training_record.json'))['checkpoint_sha256'])")
+
+.venv-baseline/bin/python -m baseline.ocr.run \
+  --protocol ocr_only --split val --mode none \
+  --engine crnn \
+  --crnn-checkpoint models/crnn/results/full-training/checkpoint.pt \
+  --crnn-expected-sha256 "$CRNN_SHA" \
+  --output models/crnn/results/evaluation/ocr_only/raw_val_none.json
+```
+
+On PowerShell, obtain the same digest with:
+
+```powershell
+$crnnSha = (Get-Content -Raw models/crnn/results/full-training/training_record.json | ConvertFrom-Json).checkpoint_sha256
+.\.venv-baseline\Scripts\python.exe -m baseline.ocr.run `
+  --protocol ocr_only --split val --mode none --engine crnn `
+  --crnn-checkpoint models/crnn/results/full-training/checkpoint.pt `
+  --crnn-expected-sha256 $crnnSha `
+  --output models/crnn/results/evaluation/ocr_only/raw_val_none.json
+```
+
+Both checkpoint flags are required for `--engine crnn`. The adapter verifies
+SHA-256 before loading, uses the same greedy CTC collapse/confidence convention,
+and emits the existing raw-cache schema. Its identity includes architecture,
+input geometry, selected epoch, vocabulary digest, source digests, and runtime
+versions. Resume checks work unchanged; model/weight identities also prevent
+a CRNN cache or selection policy from being mixed with EasyOCR artifacts.
+
+For the later full evaluation, repeat validation inference for all three
+modes and both protocols, adding the frozen detector `--predictions` for
+`end_to_end`. Reuse the selection/reporting commands above with the CRNN raw
+cache paths and separate CRNN policy/output directories. Test inference still
+requires that saved validation policy and still reserves one cache per protocol.
+Do not rerun the EasyOCR baseline or change the shared selection/metric rules.
+
+Run CRNN and existing OCR checks in the baseline environment:
+
+```bash
+.venv-baseline/bin/python -m unittest discover -s models/crnn/tests -v
+.venv-baseline/bin/python -m unittest discover -s baseline/ocr/tests -v
+```
+
 ## Confidence and metrics
 
 `mean` is the default plate confidence. `product` and `sumlog` are alternatives.

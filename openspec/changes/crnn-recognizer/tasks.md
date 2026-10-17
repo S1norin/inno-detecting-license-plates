@@ -8,16 +8,16 @@
 
 ## 2. Training loop
 
-- [ ] 2.1 Implement the deterministic CPU training loop in `train.py` (seed 42, 1 thread, deterministic mode, Adam lr 1e-3, batch 32, per-epoch greedy-decoded validation character accuracy, best-epoch selection with ties to the earlier epoch, checkpoint + `training_record.json` output) and verify a short 2-epoch run writes a record containing config, seed, thread count, library versions, dataset/charset digests, per-epoch validation metrics, selected epoch, and the checkpoint digest
-- [ ] 2.2 Run a 1-epoch timing probe and fix the final epoch count, recorded in the training record and design follow-through (report), verifying the probe duration is noted in `models/crnn/REPORT.md`
-- [ ] 2.3 Verify the determinism requirement: run the 2-epoch training twice from the same data and config and confirm both `checkpoint.pt` files have identical sha256 digests
+- [x] 2.1 Implement the deterministic CPU training loop in `train.py` (seed 42, 1 thread, deterministic mode, Adam lr 1e-3, batch 32, per-epoch greedy-decoded validation character accuracy, best-epoch selection with ties to the earlier epoch, checkpoint + `training_record.json` output) and verify a short 2-epoch run writes a record containing config, seed, thread count, library versions, dataset/charset digests, per-epoch validation metrics, selected epoch, and the checkpoint digest
+- [x] 2.2 Run a 1-epoch timing probe and fix the final epoch count, recorded in the training record and design follow-through (report), verifying the probe duration is noted in `models/crnn/REPORT.md`
+- [x] 2.3 Verify the determinism requirement: run the 2-epoch training twice from the same data and config and confirm both `checkpoint.pt` files have identical sha256 digests
 
 ## 3. Engine and runner integration
 
-- [ ] 3.1 Implement `CRNNEngine` in `models/crnn/engine.py` (digest-verified checkpoint load, `identity`, `weight_digests`, `recognize` via softmax + the existing `decode_greedy`, 1-thread deterministic inference) and verify unit tests pass: construction rejects a mismatched sha256, `recognize` on real validation crops returns text with one finite confidence per emitted character, and `identity` carries the required fields
-- [ ] 3.2 Add `--engine {easyocr,crnn}` (default `easyocr`) plus `--crnn-checkpoint` and `--crnn-expected-sha256` to `baseline/ocr/run.py` and verify the existing test suite still passes for the EasyOCR default while a CRNN inference pass over a few samples produces a cache that passes `validate_raw`
-- [ ] 3.3 Update `baseline/ocr/README.md` with CRNN training and evaluation usage and verify the documented commands match the implemented CLIs
-- [ ] 3.4 Update the model-code location line in `AGENTS.md` to point non-baseline model code to `models/` and verify the file names both `baseline/` and `models/` correctly
+- [x] 3.1 Implement `CRNNEngine` in `models/crnn/engine.py` (digest-verified checkpoint load, `identity`, `weight_digests`, `recognize` via softmax + the existing `decode_greedy`, 1-thread deterministic inference) and verify unit tests pass: construction rejects a mismatched sha256, `recognize` on real validation crops returns text with one finite confidence per emitted character, and `identity` carries the required fields
+- [x] 3.2 Add `--engine {easyocr,crnn}` (default `easyocr`) plus `--crnn-checkpoint` and `--crnn-expected-sha256` to `baseline/ocr/run.py` and verify the existing test suite still passes for the EasyOCR default while a CRNN inference pass over a few samples produces a cache that passes `validate_raw`
+- [x] 3.3 Update `baseline/ocr/README.md` with CRNN training and evaluation usage and verify the documented commands match the implemented CLIs
+- [x] 3.4 Update the model-code location line in `AGENTS.md` to point non-baseline model code to `models/` and verify the file names both `baseline/` and `models/` correctly
 
 ## 4. Full evaluation run and report
 
