@@ -27,3 +27,5 @@ data/dataset/labels/*.cache
 baseline/evaluation/results/
 baseline/evaluation/figures/*.png
 !baseline/evaluation/figures/baseline_comparison.png
+
+docs/template/
