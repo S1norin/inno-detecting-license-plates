@@ -74,9 +74,20 @@ importing `baseline/` helpers is already established (`models/crnn/engine.py`).
 
 `train.py` is a thin CLI wrapper around
 `ultralytics.YOLO(verified_weights).train(data=..., ...)`, reading
-`train_config.yaml`. Ultralytics already saves `best.pt` by validation mAP
-and supports `patience`, so checkpoint selection and early stopping come from
-the pinned library rather than a reimplementation.
+`train_config.yaml`. The pinned version's default fitness is
+`0.1 * mAP@0.5 + 0.9 * mAP@0.5:0.95`, not the mAP@0.5 required by this change.
+A small `DetectionValidator` adapter sets fitness to validation mAP@0.5;
+`DetectionTrainer` continues to run the library's training loop, checkpoint
+serialization and early stopping. The adapter preserves the first checkpoint
+on tied maxima (the library otherwise overwrites it), and a thin stopper adapter
+allows a zero-mAP plateau to exhaust patience instead of being treated as an
+uninitialized run indefinitely. These cases are covered by CPU unit tests.
+
+The wrapper generates verified train/val-only lists and a YAML without a test
+entry or download script. The trainer consumes this local description directly,
+avoiding the generic dataset loader's automatic font download. The full resolved
+library arguments and actual optimizer learning rates are saved in the training
+record, which is updated atomically after every epoch and on failure.
 
 Alternative considered: a custom loop (CRNN-style). Rejected — YOLO's loss,
 anchors, and NMS live inside Ultralytics; a custom loop would diverge from
@@ -87,10 +98,17 @@ the pinned validator and buy nothing observable.
 Image size 640, max 100 epochs, `patience` 20, batch 16, seed 42,
 Ultralytics default learning rate and warmup (recorded in the training
 record), no data augmentation beyond Ultralytics defaults. The
-pretrained model is already plate-specific and strong (0.92 test mAP), so
+pretrained model is already plate-specific and strong (0.91 test mAP), so
 fine-tuning is expected to converge well inside 100 epochs; patience caps the
 run. GPU makes the full budget cheap, so no reduced-epoch variant is
 justified.
+
+Training uses FP32 (`amp=False`) to avoid the library's AMP-check download of
+an unrelated model. One explicit CUDA device and `workers=0` keep execution on
+a single machine; existing run directories and resume are refused. These
+execution choices are included in the resolved configuration. A two-epoch
+smoke run can override only the epoch budget and run name; it must use a
+separate output directory from the full experiment.
 
 ### D5: Evaluating the fine-tuned checkpoint
 

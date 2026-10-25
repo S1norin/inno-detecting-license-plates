@@ -9,9 +9,9 @@
 
 ## 2. Training code
 
-- [ ] 2.1 Implement `models/yolo11_finetune/train.py`: config-driven Ultralytics `train()` wrapper that starts from the digest-verified pretrained weights, trains on the original-scale train split, uses val-mAP checkpoint selection with early stopping, and writes a machine-readable training record (start-weight digest, full config, per-epoch val mAP@0.5, selected epoch, library versions, machine) next to the final checkpoint
-- [ ] 2.2 Add unittest tests for `train.py` covering config validation (positive integers, patience), rejection of a start-weight digest mismatch, and the completeness of the training-record fields, and verify `./.venv-baseline/bin/python -m unittest discover -s models/yolo11_finetune/tests -v` passes
-- [ ] 2.3 Verify the training entry point refuses to run on a machine without a GPU and `uv run ruff check .` passes
+- [x] 2.1 Implement `models/yolo11_finetune/train.py`: config-driven Ultralytics `train()` wrapper that starts from the digest-verified pretrained weights, trains on the original-scale train split, uses val-mAP checkpoint selection with early stopping, and writes a machine-readable training record (start-weight digest, full config, per-epoch val mAP@0.5, selected epoch, library versions, machine) next to the final checkpoint
+- [x] 2.2 Add unittest tests for `train.py` covering config validation (positive integers, patience), rejection of a start-weight digest mismatch, and the completeness of the training-record fields, and verify `./.venv-baseline/bin/python -m unittest discover -s models/yolo11_finetune/tests -v` passes
+- [x] 2.3 Verify the training entry point refuses to run on a machine without a GPU and `uv run ruff check .` passes
 
 ## 3. Remote training run (GPU machine)
 
