@@ -1,10 +1,11 @@
-# Preparation only. No command in baseline evaluation starts training.
+# Fixed starting configuration; training runs in the separate GPU environment.
 model: baseline/weights/license-plate-finetune-v1s.pt
 data: data/dataset/dataset_original.yaml
 imgsz: 640
 epochs: 100
+patience: 20
 batch: 16
 seed: 42
 deterministic: true
-project: baseline/detection/results
+project: models/yolo11_finetune/results
 name: finetune
