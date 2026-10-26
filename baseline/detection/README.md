@@ -59,7 +59,7 @@ Windows PowerShell:
 & $baselinePython -m baseline.detection.evaluate --split val --run-id repeat
 & $baselinePython -m baseline.detection.evaluate --split test --run-id repeat
 & $baselinePython -m baseline.detection.metrics baseline/detection/results/baseline/predictions_val.json --output baseline/detection/results/baseline/recomputed_val.json
-& $baselinePython -m baseline.detection.train_ready
+& $baselinePython -m models.yolo11_finetune.train_ready
 ```
 
 Unix:
@@ -70,7 +70,7 @@ Unix:
 ./.venv-baseline/bin/python -m baseline.detection.evaluate --split val --run-id repeat
 ./.venv-baseline/bin/python -m baseline.detection.evaluate --split test --run-id repeat
 ./.venv-baseline/bin/python -m baseline.detection.metrics baseline/detection/results/baseline/predictions_val.json --output baseline/detection/results/baseline/recomputed_val.json
-./.venv-baseline/bin/python -m baseline.detection.train_ready
+./.venv-baseline/bin/python -m models.yolo11_finetune.train_ready
 ```
 
 Use a new run ID when rerunning: existing split results are never overwritten.
@@ -117,10 +117,13 @@ is expected on the same pinned environment and machine, not across CPU hardware.
 
 ## Fine-tuning readiness
 
-`train_config.yaml` supplies cached weights, the original dataset, and explicit
-starting hyperparameters. `train_ready` verifies the cached digest, YAML, and
-train paths without starting training. These defaults are preparation for a
-later experiment, not tuned parameters.
+Fine-tuning code and configuration live in `models/yolo11_finetune/`. Its
+`train_config.yaml` supplies cached weights, the original dataset, and fixed
+starting hyperparameters (100 epochs, patience 20, batch 16, seed 42). The
+`models.yolo11_finetune.train_ready` command verifies the cached digest, YAML,
+and train paths without starting training; it works in the CPU baseline
+environment. Training uses a separate NVIDIA GPU environment pinned in
+`models/yolo11_finetune/requirements-gpu.txt`. Baseline evaluation remains CPU-only.
 
 Lint from the root with `uv run ruff check baseline/` (or
 `python -m uv run ruff check baseline/` when uv is not on PATH).

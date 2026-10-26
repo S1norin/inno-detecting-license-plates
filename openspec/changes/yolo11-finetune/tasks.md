@@ -2,10 +2,10 @@
 
 ## 1. Module setup and file moves
 
-- [ ] 1.1 Create the `models/yolo11_finetune/` package (`__init__.py`, gitignored `results/`) and verify `uv run ruff check .` stays clean with the new package present
-- [ ] 1.2 Move `train_ready.py` and `train_config.yaml` from `baseline/detection/` to `models/yolo11_finetune/`, update the config's output directory to `models/yolo11_finetune/results` and add the `patience` setting, and verify `./.venv-baseline/bin/python -m models.yolo11_finetune.train_ready` passes against the cached weights and train split
-- [ ] 1.3 Update `baseline/detection/README.md` so the fine-tuning-readiness section points at `models/yolo11_finetune/` and verify the old `baseline.detection.train_ready` command no longer appears in any doc
-- [ ] 1.4 Add `models/yolo11_finetune/requirements-gpu.txt` pinning the GPU training environment (ultralytics 8.3.162, Torch 2.6.0 CUDA wheels, torchvision, numpy, OpenCV, opencv-python-headless) and verify every non-Torch pin matches the baseline requirements versions
+- [x] 1.1 Create the `models/yolo11_finetune/` package (`__init__.py`, gitignored `results/`) and verify `uv run ruff check .` stays clean with the new package present
+- [x] 1.2 Move `train_ready.py` and `train_config.yaml` from `baseline/detection/` to `models/yolo11_finetune/`, update the config's output directory to `models/yolo11_finetune/results` and add the `patience` setting, and verify `./.venv-baseline/bin/python -m models.yolo11_finetune.train_ready` passes against the cached weights and train split
+- [x] 1.3 Update `baseline/detection/README.md` so the fine-tuning-readiness section points at `models/yolo11_finetune/` and verify the retired baseline readiness command no longer appears in any doc
+- [x] 1.4 Add `models/yolo11_finetune/requirements-gpu.txt` pinning the GPU training environment (ultralytics 8.3.162, Torch 2.6.0 CUDA wheels, torchvision, numpy, OpenCV, opencv-python-headless) and verify every non-Torch pin matches the baseline requirements versions
 
 ## 2. Training code
 
