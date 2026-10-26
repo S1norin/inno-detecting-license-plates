@@ -84,6 +84,18 @@ Return `best.pt` and its receipt together; verify the checkpoint SHA-256 against
 this module. Reproducibility is scoped to the same machine and pinned
 environment; GPU repeatability has not yet been measured.
 
+## Evaluating the fine-tuned checkpoint
+
+Evaluation uses the frozen baseline harness with its `--model` option, which
+records the supplied file's SHA-256 in the metrics JSON in place of the
+pinned-manifest check. The default (no `--model`) remains the pinned
+pretrained detector:
+
+```sh
+./.venv-baseline/bin/python -m baseline.detection.evaluate --split val --run-id finetuned-val --validate \
+  --model models/yolo11_finetune/results/finetune/weights/best.pt
+```
+
 ## Verification without GPU training
 
 ```sh
