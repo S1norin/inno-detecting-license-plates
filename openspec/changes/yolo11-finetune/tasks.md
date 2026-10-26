@@ -30,9 +30,18 @@ training record.
 
 ## 4. Evaluation and comparison
 
-- [ ] 4.1 Add a `--model` path option to `baseline/detection/evaluate.py` (default unchanged: the pinned pretrained model; a supplied file's SHA-256 is recorded in the metrics JSON in place of the manifest check) and verify all existing `baseline/tests` pass and a new test covers digest recording for a supplied model
-- [ ] 4.2 Evaluate the fine-tuned checkpoint on validation with `--validate` and on test, and verify the metrics JSONs exist, the independent cross-check agrees within 0.01, and both runs use the identical inference settings as the frozen baseline
-- [ ] 4.3 Build the pretrained-vs-fine-tuned comparison (overall and per size bucket and tilt bin, mAP@0.5/precision/recall/F1) and verify the numbers match the two metrics JSONs
+- [x] 4.1 Add a `--model` path option to `baseline/detection/evaluate.py` (default unchanged: the pinned pretrained model; a supplied file's SHA-256 is recorded in the metrics JSON in place of the manifest check) and verify all existing `baseline/tests` pass and a new test covers digest recording for a supplied model
+- [x] 4.2 Evaluate the fine-tuned checkpoint on validation with `--validate` and on test, and verify the metrics JSONs exist, the independent cross-check agrees within 0.01, and both runs use the identical inference settings as the frozen baseline
+- [x] 4.3 Build the pretrained-vs-fine-tuned comparison (overall and per size bucket and tilt bin, mAP@0.5/precision/recall/F1) and verify the numbers match the two metrics JSONs
+
+Notes: validation first (mAP@0.5 0.9949, Ultralytics cross-check delta 6e-07), then the
+one-shot test run (mAP@0.5 0.9949); frozen baseline reference: val 0.9245, test
+0.9073. Results live under `baseline/detection/results/finetuned-val` and
+`finetuned-test`; comparisons under `models/yolo11_finetune/results/finetune/
+comparison_{val,test}.json`, independently re-verified against the source metrics
+JSONs (all 7 scopes x 4 metrics, both splits). The one-shot test run exposed one
+zero-area (sub-pixel) model box, which the harness now filters before metrics (it
+can never be a true positive; the guard in `compute_metrics` is unchanged).
 
 ## 5. End-to-end re-run with the better detector
 
