@@ -105,19 +105,28 @@ def configure_cpu():
     torch.use_deterministic_algorithms(True)
 
 
+def resolve_model(model=None):
+    if model is None:
+        return DEFAULT_MODEL, verified_path()
+    path = Path(model).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Model weights missing: {path}")
+    return path.name, path
+
+
 def write_json(path, value):
     with Path(path).open("x", encoding="utf-8") as stream:
         json.dump(value, stream, indent=2, allow_nan=False)
         stream.write("\n")
 
 
-def evaluate(config, split, run_id, validate=False):
+def evaluate(config, split, run_id, validate=False, model=None):
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("Run ID must be 1-80 filename-safe characters")
     directory = RESULTS / run_id
     if (directory / f"predictions_{split}.json").exists() or (directory / f"metrics_{split}.json").exists():
         raise FileExistsError(f"Results already exist for {run_id}/{split}; use a new run ID")
-    weight = verified_path()
+    model_id, weight = resolve_model(model)
     root, paths, records, fingerprints, thresholds = load_dataset(config, split)
     configure_cpu()
     from ultralytics import YOLO
@@ -140,15 +149,19 @@ def evaluate(config, split, run_id, validate=False):
         classes = result.boxes.cls.cpu().tolist()
         if any(value != 0 for value in classes):
             raise ValueError(f"Unexpected prediction class: {path}")
-        record.update(boxes=result.boxes.xyxy.cpu().tolist(), scores=result.boxes.conf.cpu().tolist(),
-                      class_ids=[int(value) for value in classes])
+        xyxy = result.boxes.xyxy.cpu().tolist()
+        scores = result.boxes.conf.cpu().tolist()
+        # Sub-pixel model boxes have zero area and can never be true positives.
+        keep = [i for i, box in enumerate(xyxy) if box[2] > box[0] and box[3] > box[1]]
+        record.update(boxes=[xyxy[i] for i in keep], scores=[scores[i] for i in keep],
+                      class_ids=[0] * len(keep))
         seen.add(path)
         if len(seen) % 100 == 0:
             print(f"{split}: {len(seen)}/{len(paths)} images", flush=True)
     if len(seen) != len(records):
         raise ValueError("Inference did not return one record per split image")
     provenance = {
-        "schema_version": 1, "model_id": DEFAULT_MODEL, "weight_sha256": sha256(weight),
+        "schema_version": 1, "model_id": model_id, "weight_sha256": sha256(weight),
         "dataset_config": str(Path(config).resolve()), "dataset_root": str(root), "split": split,
         "timestamp": datetime.now(UTC).isoformat(), "run_id": run_id, "seed": 42, "cpu_threads": 1,
         "python": sys.version, "packages": {name: importlib.metadata.version(name)
@@ -185,8 +198,10 @@ def main():
     parser.add_argument("--data", type=Path, default=ROOT / "data/dataset/dataset_original.yaml")
     parser.add_argument("--run-id", default=datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
     parser.add_argument("--validate", action="store_true", help="Compare custom AP to Ultralytics val()")
+    parser.add_argument("--model", type=Path, default=None,
+                        help="Alternative checkpoint path; its SHA-256 is recorded in the metrics JSON")
     args = parser.parse_args()
-    evaluate(args.data, args.split, args.run_id, args.validate)
+    evaluate(args.data, args.split, args.run_id, args.validate, args.model)
 
 
 if __name__ == "__main__":
