@@ -90,6 +90,18 @@ class ModelOptionTests(unittest.TestCase):
         with self.assertRaisesRegex(FileNotFoundError, "Model weights missing"):
             evaluate_module.evaluate(self.config, "val", "missing-run", model=self.root / "absent.pt")
 
+    def test_degenerate_model_boxes_are_filtered(self):
+        model = self.fake_model()
+        results = list(model.predict.return_value)
+        results[0].boxes.cls = torch.tensor([0.0, 0.0])
+        results[0].boxes.xyxy = torch.tensor([[0.0, 0.0, 100.0, 83.0], [50.0, 0.0, 50.0, 40.0]])
+        results[0].boxes.conf = torch.tensor([0.9, 0.8])
+        model.predict.return_value = iter(results)
+        with patch.object(evaluate_module, "RESULTS", self.root / "results"), \
+             patch("ultralytics.YOLO", return_value=model):
+            metrics = evaluate_module.evaluate(self.config, "val", "degenerate-run", model=self.weight)
+        self.assertEqual(metrics["overall"]["prediction_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

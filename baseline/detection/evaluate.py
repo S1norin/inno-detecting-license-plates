@@ -149,8 +149,12 @@ def evaluate(config, split, run_id, validate=False, model=None):
         classes = result.boxes.cls.cpu().tolist()
         if any(value != 0 for value in classes):
             raise ValueError(f"Unexpected prediction class: {path}")
-        record.update(boxes=result.boxes.xyxy.cpu().tolist(), scores=result.boxes.conf.cpu().tolist(),
-                      class_ids=[int(value) for value in classes])
+        xyxy = result.boxes.xyxy.cpu().tolist()
+        scores = result.boxes.conf.cpu().tolist()
+        # Sub-pixel model boxes have zero area and can never be true positives.
+        keep = [i for i, box in enumerate(xyxy) if box[2] > box[0] and box[3] > box[1]]
+        record.update(boxes=[xyxy[i] for i in keep], scores=[scores[i] for i in keep],
+                      class_ids=[0] * len(keep))
         seen.add(path)
         if len(seen) % 100 == 0:
             print(f"{split}: {len(seen)}/{len(paths)} images", flush=True)
