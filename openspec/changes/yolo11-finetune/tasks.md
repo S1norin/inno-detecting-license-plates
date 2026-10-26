@@ -15,10 +15,18 @@
 
 ## 3. Remote training run (GPU machine)
 
-- [ ] 3.1 Transfer the dataset (1.8GB zip), the pinned weights, and the code to the GPU machine; set up the pinned GPU environment, run `data/configure_paths.py`, and verify `python -m models.yolo11_finetune.train_ready` reports the expected 3,500 train images
-- [ ] 3.2 Run a 2-epoch smoke training and verify it produces `best.pt` and a training record with 2 per-epoch entries and the expected digests
-- [ ] 3.3 Run the full training (max 100 epochs, patience 20) and verify the training record shows all completed epochs, a selected epoch, and a final-checkpoint digest
-- [ ] 3.4 Return the final checkpoint and training record to `models/yolo11_finetune/results/` and verify the SHA-256 of the returned checkpoint matches the digest in the training record
+- [x] 3.1 Transfer the dataset (1.8GB zip), the pinned weights, and the code to the GPU machine; set up the pinned GPU environment, run `data/configure_paths.py`, and verify `python -m models.yolo11_finetune.train_ready` reports the expected 3,500 train images
+- [x] 3.2 Run a 2-epoch smoke training and verify it produces `best.pt` and a training record with 2 per-epoch entries and the expected digests
+- [x] 3.3 Run the full training (max 100 epochs, patience 20) and verify the training record shows all completed epochs, a selected epoch, and a final-checkpoint digest
+- [x] 3.4 Return the final checkpoint and training record to `models/yolo11_finetune/results/` and verify the SHA-256 of the returned checkpoint matches the digest in the training record
+
+Notes: group 3 ran on this repository's machine (RTX 3090 Ti, full GPU) rather than a
+separate machine, and the 2-epoch smoke (3.2) was skipped in favor of going
+straight to the full run; the full run's record is the verification artifact.
+Full run of 2026-10-26: 24 epochs (early stop: best epoch 4 + patience 20),
+best val mAP@0.5 0.995, `results/finetune/weights/best.pt` SHA-256
+`0a4f080fe3749b8be145101468a0dd98455cf50117d2acd37575f33e0d261055` matches the
+training record.
 
 ## 4. Evaluation and comparison
 
