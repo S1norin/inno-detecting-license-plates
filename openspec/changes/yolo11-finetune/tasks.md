@@ -45,10 +45,39 @@ can never be a true positive; the guard in `compute_metrics` is unchanged).
 
 ## 5. End-to-end re-run with the better detector
 
-- [ ] 5.1 Select the detector with the higher validation mAP@0.5 and verify its validation and test prediction JSONs exist for the end-to-end protocol
-- [ ] 5.2 Re-run the CRNN end-to-end protocol on validation for all three preprocessing modes via `baseline/ocr/run.py` and verify the mode/tau selection is made from validation results only
-- [ ] 5.3 Run the end-to-end protocol on test exactly once with the selected mode/tau and verify the test metrics JSON exists
-- [ ] 5.4 Compare the new end-to-end numbers against the previous end-to-end results produced by the frozen detector and verify both sets are reported side by side
+- [x] 5.1 Select the detector with the higher validation mAP@0.5 and verify its validation and test prediction JSONs exist for the end-to-end protocol
+- [x] 5.2 Re-run the CRNN end-to-end protocol on validation for all three preprocessing modes via `baseline/ocr/run.py` and verify the mode/tau selection is made from validation results only
+
+Notes: winner is the fine-tuned detector (val mAP@0.5 0.9949 vs 0.9245); its
+`predictions_val.json` (700) and `predictions_test.json` (800) feed the protocol.
+The CRNN checkpoint was not present on this machine (gitignored artifacts from
+the CRNN change), so the recognizer was re-trained with the fixed 50-epoch
+column (seed 42, CPU, single-threaded); selected epoch 39, val character
+accuracy 0.7564, checkpoint digest recorded in its training record. Validation
+ablation (end_to_end, tau from selection): none 0.7534 char acc / F1 0.7121,
+gray_contrast 0.7500 / 0.7144, canny 0.4539 / 0.0900. The shared selection rule
+picked mode `none`, tau 0.50, from validation only.
+- [x] 5.3 Run the end-to-end protocol on test exactly once with the selected mode/tau and verify the test metrics JSON exists
+- [x] 5.4 Compare the new end-to-end numbers against the previous end-to-end results produced by the frozen detector and verify both sets are reported side by side
+
+End-to-end test comparison (CRNN, mode `none`, tau 0.50, 800 samples), frozen
+vs fine-tuned detector. Previous numbers are from `models/crnn/REPORT.md`
+(frozen YOLO predictions); new numbers from
+`models/crnn/results/evaluation-finetuned/end_to_end/metrics_test_none.json`.
+
+| Metric | Frozen detector | Fine-tuned detector | Delta |
+|---|---:|---:|---:|
+| Coverage | 0.9762 | 1.0000 | +0.0238 |
+| Character accuracy | 0.6561 | 0.7661 | +0.1100 |
+| Exact plates | 133 / 800 | 296 / 800 | +163 |
+| Precision | 0.3624 | 0.5837 | +0.2213 |
+| Recall | 0.9371 | 1.0000 | +0.0629 |
+| Plate F1 | 0.5226 | 0.7372 | +0.2146 |
+
+By size (F1, frozen → fine-tuned): small 0.6371 → 0.8750, medium 0.6355 →
+0.8312, large 0.2177 → 0.4073. By tilt (F1): 0-9 0.4749 → 0.7396, 10-19
+0.1194 → 0.2500, 20+ 0.5696 → 0.7742. The one-shot test reservation
+(`test_inference_end_to_end.json`) binds the policy to the test cache.
 
 ## 6. Report and closeout
 
