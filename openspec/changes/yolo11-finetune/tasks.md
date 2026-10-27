@@ -81,6 +81,33 @@ By size (F1, frozen → fine-tuned): small 0.6371 → 0.8750, medium 0.6355 →
 
 ## 6. Report and closeout
 
-- [ ] 6.1 Write `models/yolo11_finetune/REPORT.md` covering the training (config, timing, selected epoch, digests), the detector comparison, the end-to-end re-run, and the same-machine reproducibility scope, and verify every reported number traces to a metrics or training-record file
-- [ ] 6.2 Run the full verification pass: `uv run ruff check .`, the baseline unittest suite, and the CRNN unittest suite, and verify all pass
-- [ ] 6.3 Validate the change with `openspec validate yolo11-finetune` and write the PR description stating how the change was verified, per `CONTRIBUTING.md`
+- [x] 6.1 Write `models/yolo11_finetune/REPORT.md` covering the training (config, timing, selected epoch, digests), the detector comparison, the end-to-end re-run, and the same-machine reproducibility scope, and verify every reported number traces to a metrics or training-record file
+- [x] 6.2 Run the full verification pass: `uv run ruff check .`, the baseline unittest suite, and the CRNN unittest suite, and verify all pass
+- [x] 6.3 Validate the change with `openspec validate yolo11-finetune` and write the PR description stating how the change was verified, per `CONTRIBUTING.md`
+
+PR description:
+
+Fine-tunes the pinned YOLO11s detector on the original-scale train split,
+evaluates it against the frozen pretrained baseline under the shared
+detection harness, and re-runs the CRNN end-to-end recognition protocol
+with the better detector. Adds the `models/yolo11_finetune/` module
+(`train.py`, `compare.py`, pinned `train_config.yaml`, GPU requirements,
+tests, README, report), a `--model` option on
+`baseline/detection/evaluate.py` (default unchanged: pinned weights with
+manifest verification; a supplied path records its SHA-256 in the metrics
+provenance), and filtering of zero-area model boxes in the evaluation
+collector.
+
+Verified: full training completed (24 epochs, best val mAP@0.5 0.995 at
+epoch 4, checkpoint digest matches the training record); detector
+evaluation on validation (with an Ultralytics cross-check agreeing to
+6e-07) and a single test run; end-to-end validation ablation with
+validation-only mode/tau selection (none, 0.50) and a single test run
+(coverage 1.0000, character accuracy 0.7661, 296/800 exact plates,
+plate F1 0.7372 vs 0.5226 for the frozen detector). Every reported number
+was checked against its source metrics JSON or training record. Gates:
+ruff clean, baseline 31/31, CRNN 16/16, fine-tuning 26/26 unit tests,
+`openspec validate yolo11-finetune --strict` passing. All task groups are
+complete; see `models/yolo11_finetune/REPORT.md` for results and the
+tasks.md notes for the recorded deviations (training on this machine
+after GPU release, smoke run skipped, CRNN re-trained locally).
