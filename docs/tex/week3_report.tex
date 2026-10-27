@@ -1,0 +1,200 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{url}
+
+\title{Progress report\\ \large License plate detection and recognition on CCPD2019}
+\date{Status as of 27 October 2026 (progress-check milestone)}
+
+\begin{document}
+\maketitle
+
+\noindent Code: \url{https://github.com/S1norin/inno-detecting-license-plates}
+
+\bigskip
+\textbf{Contributors}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Name & Email \\
+\midrule
+Mikhail Krylov & m.krylov@innopolis.university \\
+Maximilian Mifsud Bonici & m.mifsudbonici@innopolis.university \\
+Andrei Polevoi & a.polevoi@innopolis.university \\
+Evgenii Khovalyg & e.khovalyg@innopolis.university \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Completed experiments}
+
+\begin{itemize}
+\item \textbf{Dataset.} A 5{,}000-image CCPD2019 subset was prepared into
+  15{,}000 images with scale variants (1.0, 0.75, 0.5). Splits are assigned
+  before resizing, so all variants of one photo stay in one split
+  (3{,}500 / 700 / 800 original-scale train / validation / test).
+\item \textbf{E1 detection baseline.} The team's fine-tuned YOLO11s detector
+  is used frozen, evaluated through the shared harness (CPU, single-threaded,
+  identical inference settings for every model).
+\item \textbf{E2 recognition baseline.} Pretrained EasyOCR, frozen, under
+  both protocols (\texttt{ocr\_only} on ground-truth crops,
+  \texttt{end\_to\_end} on detector boxes).
+\item \textbf{E2b plate-specific CRNN.} A 3-million-parameter
+  CRNN + BiLSTM + CTC recognizer trained on the 3{,}500 original-scale
+  training crops (50 epochs, Adam lr 0.001, batch 32, seed 42, CPU,
+  single-threaded; selected epoch 39, validation character accuracy 0.7564).
+\item \textbf{E3 preprocessing ablation.} \texttt{none},
+  \texttt{gray\_contrast}, and \texttt{canny}, each at its own
+  validation-selected confidence threshold.
+\item \textbf{E4/E5 size and tilt sensitivity.} Per-bucket (small / medium /
+  large) and per-tilt-bin (0--9, 10--19, 20+ degrees) metrics for detection
+  and recognition.
+\item \textbf{E6 confidence threshold.} Per-character confidence with a
+  validation-selected abstention threshold; test is evaluated exactly once
+  per protocol with the saved policy.
+\item \textbf{E1 fine-tuning (new).} YOLO11s fine-tuned on the
+  3{,}500-image original-scale train split (640 px, batch 16, seed 42,
+  deterministic, RTX 3090 Ti, $\sim$24 min). Early stopping ended the run
+  after 24 of 100 epochs; best epoch 4, validation mAP@0.5 0.995.
+\item \textbf{End-to-end re-run (new).} The CRNN end-to-end protocol was
+  re-run with the winning detector's predictions: validation ablation in all
+  three preprocessing modes, mode and threshold selected from validation
+  only, then a single test run.
+\end{itemize}
+
+\section{Preliminary comparison}
+
+\subsection{Detection: frozen vs fine-tuned YOLO11s}
+
+Test split, identical inference settings, shared harness:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Model & mAP@0.5 & Precision & Recall & F1 \\
+\midrule
+Frozen YOLO11s & 0.9073 & 0.9408 & 0.8938 & 0.9167 \\
+Fine-tuned YOLO11s & 0.9949 & 0.9466 & 0.9975 & 0.9714 \\
+\bottomrule
+\end{tabular}
+\caption{Detection on the test split (800 images).}
+\end{table}
+
+Per scope, test mAP@0.5 (frozen $\rightarrow$ fine-tuned): small
+0.8453 $\rightarrow$ 0.9950, medium 0.9505 $\rightarrow$ 0.9950, large
+0.9371 $\rightarrow$ 0.9948; tilt 0--9 0.9593 $\rightarrow$ 0.9947, 10--19
+0.9018 $\rightarrow$ 0.9863, 20+ 0.8954 $\rightarrow$ 0.9950. The gain is
+dominated by recall (0.8938 $\rightarrow$ 0.9975); validation tells the same
+story (0.9245 $\rightarrow$ 0.9949).
+
+\subsection{Recognition: engines and detectors}
+
+Test split, 800 plates, both engines through the same harness. The
+end-to-end rows pair the CRNN with each detector's predicted boxes:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Protocol & Engine / detector & Coverage & Char.\ accuracy & Exact plates & Precision & Recall & F1 \\
+\midrule
+ocr\_only & EasyOCR & 0.7300 & 0.3474 & 0 / 800 & 0.0377 & 0.0924 & 0.0535 \\
+ocr\_only & CRNN & 1.0000 & 0.7538 & 269 / 800 & 0.5500 & 1.0000 & 0.7097 \\
+end\_to\_end & EasyOCR & 0.7025 & 0.3240 & 0 / 800 & 0.0267 & 0.0593 & 0.0368 \\
+end\_to\_end & CRNN + frozen YOLO11s & 0.9762 & 0.6561 & 133 / 800 & 0.3624 & 0.9371 & 0.5226 \\
+end\_to\_end & CRNN + fine-tuned YOLO11s & 1.0000 & 0.7661 & 296 / 800 & 0.5837 & 1.0000 & 0.7372 \\
+\bottomrule
+\end{tabular}
+\caption{Recognition on the test split.}
+\end{table}
+
+Preprocessing ablation for the current pipeline (CRNN + fine-tuned detector,
+validation split, each mode at its own selected threshold):
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Mode & Coverage & Char.\ accuracy & Exact plates & Plate F1 \\
+\midrule
+none & 0.9971 & 0.7534 & 237 / 700 & 0.7121 \\
+gray\_contrast & 1.0000 & 0.7500 & 222 / 700 & 0.7144 \\
+canny & 0.9957 & 0.4539 & 5 / 700 & 0.0900 \\
+\bottomrule
+\end{tabular}
+\caption{End-to-end validation ablation; the shared rule selects \texttt{none}, tau 0.50.}
+\end{table}
+
+\section{Observations}
+
+\begin{itemize}
+\item Fine-tuning the detector is the largest single gain of the project so
+  far: test mAP@0.5 0.9073 $\rightarrow$ 0.9949, driven by recall
+  (0.8938 $\rightarrow$ 0.9975). Small plates benefit most
+  (0.8453 $\rightarrow$ 0.9950).
+\item The detector gain flows through the whole pipeline: end-to-end plate F1
+  rises 0.5226 $\rightarrow$ 0.7372, exact plates 133 $\rightarrow$ 296, and
+  coverage reaches 1.0000 (no test abstentions).
+\item With the better detector, end-to-end character accuracy (0.7661) now
+  slightly \emph{exceeds} the ground-truth-crop number (0.7538): detector
+  boxes no longer hurt recognition, unlike with the frozen detector
+  (0.6561 vs 0.7538).
+\item The fine-tuned model converged quickly: the best epoch was 4 of 24
+  (early stop with patience 20), so the 100-epoch budget was far more than
+  enough.
+\item Canny preprocessing collapses recognition (0.4539 vs 0.7534 character
+  accuracy) and did so consistently for both detectors; the selection rule
+  correctly avoids it. \texttt{gray\_contrast} is a close second to
+  \texttt{none} (validation F1 0.7144 vs 0.7121).
+\item Large plates remain the weakest recognition bucket (test plate F1
+  0.4073 vs 0.8750 for small) because they are downscaled into the fixed
+  48-px-tall input; the 10--19 degree tilt bin is the weakest (0.2500,
+  63 samples).
+\item Ultralytics \texttt{optimizer=auto} overrode the configured
+  \texttt{lr0: 0.01} with AdamW lr 0.002; the actual optimizer state is
+  recorded in the training record, which is the source of truth.
+\item The fine-tuned detector emitted one sub-pixel zero-area box on the
+  test split; such boxes can never be true positives and are now filtered
+  before metrics, with a regression test.
+\item Practical difficulties: training needed the machine's GPU freed, and
+  the CRNN checkpoint (a gitignored artifact) had to be re-trained locally
+  ($\sim$70 min on CPU) before the end-to-end re-run; sharing it with the
+  team is tracked as an open issue.
+\end{itemize}
+
+\section{Remaining work}
+
+\begin{itemize}
+\item \textbf{Large-plate recognition.} Taller CRNN input (e.g.\ 96 px) to
+  reduce downscaling of large plates, re-trained and re-evaluated through
+  the same harness.
+\item \textbf{Failure-case analysis.} At least three annotated failure
+  examples for the results checkpoint.
+\item \textbf{Runtime and memory numbers.} Latency and peak memory for the
+  full detection + recognition pipeline.
+\item \textbf{Reproducibility check.} Clean-clone run: regenerate the
+  dataset, fetch pinned weights, and reproduce the reported metrics.
+\item \textbf{Checkpoint sharing.} Distribute the CRNN checkpoint (open
+  issue) so teammates do not need to re-train it.
+\item \textbf{Results checkpoint (3 November).} All experiments completed,
+  final metrics, tables/figures, failure examples.
+\item \textbf{Final submission (10 November).} Two-page technical summary,
+  organized and reproducible code with README and environment details, final
+  slides, prepared demo, member contributions.
+\end{itemize}
+
+\section*{References}
+
+\begin{itemize}
+\item Detection fine-tuning results: \texttt{models/yolo11\_finetune/REPORT.md}
+\item CRNN recognizer: \texttt{models/crnn/REPORT.md}
+\item Recognition baseline: \texttt{baseline/ocr/README.md}
+\item Detection baseline: \texttt{baseline/detection/README.md}
+\item Repository: \url{https://github.com/S1norin/inno-detecting-license-plates}
+\end{itemize}
+
+\end{document}
