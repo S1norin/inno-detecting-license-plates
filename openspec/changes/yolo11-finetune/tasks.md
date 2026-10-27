@@ -45,13 +45,69 @@ can never be a true positive; the guard in `compute_metrics` is unchanged).
 
 ## 5. End-to-end re-run with the better detector
 
-- [ ] 5.1 Select the detector with the higher validation mAP@0.5 and verify its validation and test prediction JSONs exist for the end-to-end protocol
-- [ ] 5.2 Re-run the CRNN end-to-end protocol on validation for all three preprocessing modes via `baseline/ocr/run.py` and verify the mode/tau selection is made from validation results only
-- [ ] 5.3 Run the end-to-end protocol on test exactly once with the selected mode/tau and verify the test metrics JSON exists
-- [ ] 5.4 Compare the new end-to-end numbers against the previous end-to-end results produced by the frozen detector and verify both sets are reported side by side
+- [x] 5.1 Select the detector with the higher validation mAP@0.5 and verify its validation and test prediction JSONs exist for the end-to-end protocol
+- [x] 5.2 Re-run the CRNN end-to-end protocol on validation for all three preprocessing modes via `baseline/ocr/run.py` and verify the mode/tau selection is made from validation results only
+
+Notes: winner is the fine-tuned detector (val mAP@0.5 0.9949 vs 0.9245); its
+`predictions_val.json` (700) and `predictions_test.json` (800) feed the protocol.
+The CRNN checkpoint was not present on this machine (gitignored artifacts from
+the CRNN change), so the recognizer was re-trained with the fixed 50-epoch
+column (seed 42, CPU, single-threaded); selected epoch 39, val character
+accuracy 0.7564, checkpoint digest recorded in its training record. Validation
+ablation (end_to_end, tau from selection): none 0.7534 char acc / F1 0.7121,
+gray_contrast 0.7500 / 0.7144, canny 0.4539 / 0.0900. The shared selection rule
+picked mode `none`, tau 0.50, from validation only.
+- [x] 5.3 Run the end-to-end protocol on test exactly once with the selected mode/tau and verify the test metrics JSON exists
+- [x] 5.4 Compare the new end-to-end numbers against the previous end-to-end results produced by the frozen detector and verify both sets are reported side by side
+
+End-to-end test comparison (CRNN, mode `none`, tau 0.50, 800 samples), frozen
+vs fine-tuned detector. Previous numbers are from `models/crnn/REPORT.md`
+(frozen YOLO predictions); new numbers from
+`models/crnn/results/evaluation-finetuned/end_to_end/metrics_test_none.json`.
+
+| Metric | Frozen detector | Fine-tuned detector | Delta |
+|---|---:|---:|---:|
+| Coverage | 0.9762 | 1.0000 | +0.0238 |
+| Character accuracy | 0.6561 | 0.7661 | +0.1100 |
+| Exact plates | 133 / 800 | 296 / 800 | +163 |
+| Precision | 0.3624 | 0.5837 | +0.2213 |
+| Recall | 0.9371 | 1.0000 | +0.0629 |
+| Plate F1 | 0.5226 | 0.7372 | +0.2146 |
+
+By size (F1, frozen → fine-tuned): small 0.6371 → 0.8750, medium 0.6355 →
+0.8312, large 0.2177 → 0.4073. By tilt (F1): 0-9 0.4749 → 0.7396, 10-19
+0.1194 → 0.2500, 20+ 0.5696 → 0.7742. The one-shot test reservation
+(`test_inference_end_to_end.json`) binds the policy to the test cache.
 
 ## 6. Report and closeout
 
-- [ ] 6.1 Write `models/yolo11_finetune/REPORT.md` covering the training (config, timing, selected epoch, digests), the detector comparison, the end-to-end re-run, and the same-machine reproducibility scope, and verify every reported number traces to a metrics or training-record file
-- [ ] 6.2 Run the full verification pass: `uv run ruff check .`, the baseline unittest suite, and the CRNN unittest suite, and verify all pass
-- [ ] 6.3 Validate the change with `openspec validate yolo11-finetune` and write the PR description stating how the change was verified, per `CONTRIBUTING.md`
+- [x] 6.1 Write `models/yolo11_finetune/REPORT.md` covering the training (config, timing, selected epoch, digests), the detector comparison, the end-to-end re-run, and the same-machine reproducibility scope, and verify every reported number traces to a metrics or training-record file
+- [x] 6.2 Run the full verification pass: `uv run ruff check .`, the baseline unittest suite, and the CRNN unittest suite, and verify all pass
+- [x] 6.3 Validate the change with `openspec validate yolo11-finetune` and write the PR description stating how the change was verified, per `CONTRIBUTING.md`
+
+PR description:
+
+Fine-tunes the pinned YOLO11s detector on the original-scale train split,
+evaluates it against the frozen pretrained baseline under the shared
+detection harness, and re-runs the CRNN end-to-end recognition protocol
+with the better detector. Adds the `models/yolo11_finetune/` module
+(`train.py`, `compare.py`, pinned `train_config.yaml`, GPU requirements,
+tests, README, report), a `--model` option on
+`baseline/detection/evaluate.py` (default unchanged: pinned weights with
+manifest verification; a supplied path records its SHA-256 in the metrics
+provenance), and filtering of zero-area model boxes in the evaluation
+collector.
+
+Verified: full training completed (24 epochs, best val mAP@0.5 0.995 at
+epoch 4, checkpoint digest matches the training record); detector
+evaluation on validation (with an Ultralytics cross-check agreeing to
+6e-07) and a single test run; end-to-end validation ablation with
+validation-only mode/tau selection (none, 0.50) and a single test run
+(coverage 1.0000, character accuracy 0.7661, 296/800 exact plates,
+plate F1 0.7372 vs 0.5226 for the frozen detector). Every reported number
+was checked against its source metrics JSON or training record. Gates:
+ruff clean, baseline 31/31, CRNN 16/16, fine-tuning 26/26 unit tests,
+`openspec validate yolo11-finetune --strict` passing. All task groups are
+complete; see `models/yolo11_finetune/REPORT.md` for results and the
+tasks.md notes for the recorded deviations (training on this machine
+after GPU release, smoke run skipped, CRNN re-trained locally).
