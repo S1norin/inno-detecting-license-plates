@@ -98,9 +98,11 @@ end-to-end rows pair the CRNN with each detector's predicted boxes:
 
 \begin{table}[H]
 \centering
+\small
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}llrrrrrr@{}}
 \toprule
-Protocol & Engine / detector & Coverage & Char.\ accuracy & Exact plates & Precision & Recall & F1 \\
+Protocol & Engine & Coverage & Char.\ acc. & Exact & Precision & Recall & F1 \\
 \midrule
 ocr\_only & EasyOCR & 0.7300 & 0.3474 & 0 / 800 & 0.0377 & 0.0924 & 0.0535 \\
 ocr\_only & CRNN & 1.0000 & 0.7538 & 269 / 800 & 0.5500 & 1.0000 & 0.7097 \\
@@ -180,7 +182,7 @@ canny & 0.9957 & 0.4539 & 5 / 700 & 0.0900 \\
   dataset, fetch pinned weights, and reproduce the reported metrics.
 \item \textbf{Checkpoint sharing.} Distribute the CRNN checkpoint (open
   issue) so teammates do not need to re-train it.
-\item \textbf{Results checkpoint (3 November).} All experiments completed,
+\item \textbf{Results checkpoint, 3 November.} All experiments completed,
   final metrics, tables/figures, failure examples.
 \item \textbf{Final submission (10 November).} Two-page technical summary,
   organized and reproducible code with README and environment details, final

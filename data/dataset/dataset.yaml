@@ -1,4 +1,4 @@
-path: C:\My\Data\Codex\Anything\CV\CCPD_Data_Preprocessing\dataset
+path: /Users/sinorin/Documents/Codex/inno-detecting-license-plates/data/dataset
 train: images/train
 val: images/val
 test: images/test
