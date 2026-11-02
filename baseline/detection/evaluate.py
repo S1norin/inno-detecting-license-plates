@@ -1,4 +1,4 @@
-"""Evaluate verified plate weights on original-scale CCPD splits."""
+"""Evaluate verified plate weights on CCPD splits at explicit dataset scales."""
 
 import argparse
 import csv
@@ -21,9 +21,23 @@ from baseline.detection.metrics import compute_metrics, tilt_bin
 RESULTS = ROOT / "baseline/detection/results"
 SETTINGS = {"imgsz": 640, "conf": 0.001, "iou": 0.7, "max_det": 300,
             "device": "cpu", "batch": 1, "half": False, "augment": False, "rect": False}
+DATASET_SCALES = (0.5, 0.75, 1.0)
 
 
-def load_dataset(config, split):
+def parse_scales(value):
+    scales = set()
+    for part in str(value).split(","):
+        part = part.strip()
+        if not part:
+            raise ValueError("Empty scale in --scales")
+        scale = float(part)
+        if scale not in DATASET_SCALES:
+            raise ValueError(f"Unknown scale {part}; dataset scales are 0.5, 0.75, 1.0")
+        scales.add(scale)
+    return scales
+
+
+def load_dataset(config, split, scales=frozenset({1.0})):
     config = Path(config).resolve()
     document = yaml.safe_load(config.read_text(encoding="utf-8"))
     if document.get("nc") != 1 or document.get("names") not in ({0: "license_plate"}, ["license_plate"]):
@@ -34,23 +48,42 @@ def load_dataset(config, split):
     root = root.resolve()
     if not root.is_dir():
         raise FileNotFoundError(f"Dataset root missing: {root}. Run python data/configure_paths.py first.")
-    listing = root / document[split]
-    paths = [Path(line.strip()) for line in listing.read_text(encoding="utf-8-sig").splitlines() if line.strip()]
-    paths = [(p if p.is_absolute() else root / p).resolve() for p in paths]
-    if not paths or len(paths) != len(set(paths)):
-        raise ValueError("Split image list is empty or contains duplicates")
+    entry = root / str(document[split])
+    if scales == frozenset({1.0}) and entry.is_dir():
+        raise ValueError("Original-scale runs require the list-form dataset config (dataset_original.yaml)")
+    if scales != frozenset({1.0}) and entry.is_file():
+        raise ValueError("Scale subset runs require the directory-form dataset config (dataset.yaml)")
+    if entry.is_dir():
+        enumerated = sorted((path for path in entry.iterdir() if path.is_file() and path.suffix.lower() == ".jpg"),
+                            key=lambda path: path.name)
+        enumerated = [path.resolve() for path in enumerated]
+        listing_digest = hashlib.sha256(
+            "\n".join(path.relative_to(root).as_posix() for path in enumerated).encode()).hexdigest()
+    else:
+        listing = entry
+        enumerated = [Path(line.strip()) for line in listing.read_text(encoding="utf-8-sig").splitlines()
+                      if line.strip()]
+        enumerated = [(p if p.is_absolute() else root / p).resolve() for p in enumerated]
+        listing_digest = sha256(listing)
 
     metadata_path = root / "metadata.csv"
     with metadata_path.open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     metadata = {}
     for row in rows:
-        if row["split"] != split or float(row["scale"]) != 1.0:
+        if row["split"] != split or float(row["scale"]) not in scales:
             continue
         key = Path(row["image_path"]).as_posix()
         if key in metadata:
             raise ValueError(f"Ambiguous metadata join: {key}")
         metadata[key] = row
+    if entry.is_dir():
+        # The split directory holds every variant; the requested scales select a subset.
+        paths = [path for path in enumerated if path.relative_to(root).as_posix() in metadata]
+    else:
+        paths = enumerated
+    if not paths or len(paths) != len(set(paths)):
+        raise ValueError("Split image list is empty or contains duplicates")
     thresholds_path = root / "run_config.json"
     thresholds = json.loads(thresholds_path.read_text(encoding="utf-8"))["bucket_train_height_thresholds"]
     q1, q2 = thresholds["q33"], thresholds["q67"]
@@ -60,7 +93,9 @@ def load_dataset(config, split):
             raise FileNotFoundError(f"Missing split image {path}; prepare images and refresh paths first")
         key = path.relative_to(root).as_posix()
         if key not in metadata:
-            raise ValueError(f"No original-scale {split} metadata for {key}")
+            if scales == frozenset({1.0}):
+                raise ValueError(f"No original-scale {split} metadata for {key}")
+            raise ValueError(f"No {split} metadata at the requested scales for {key}")
         row = metadata[key]
         width, height = int(row["width"]), int(row["height"])
         label = root / row["label_path"]
@@ -85,11 +120,13 @@ def load_dataset(config, split):
             raise ValueError(f"Tilt metadata disagrees: {key}")
         tilt_bin(tilt)
         records.append({"image_path": key, "width": width, "height": height, "ground_truth": [box],
-                        "size_bucket": bucket, "tilt_magnitude": tilt})
+                        "size_bucket": bucket, "tilt_magnitude": tilt, "scale": float(row["scale"])})
         input_hashes[key] = {"image": sha256(path), "label": sha256(label)}
     if set(metadata) != {r["image_path"] for r in records}:
-        raise ValueError("Split list does not cover all original metadata rows")
-    fingerprints = {"dataset_config": sha256(config), "split_list": sha256(listing),
+        if scales == frozenset({1.0}):
+            raise ValueError("Split list does not cover all original metadata rows")
+        raise ValueError("Split images do not cover all metadata rows for the requested scales")
+    fingerprints = {"dataset_config": sha256(config), "split_list": listing_digest,
                     "metadata": sha256(metadata_path), "run_config": sha256(thresholds_path),
                     "images_and_labels": hashlib.sha256(json.dumps(input_hashes, sort_keys=True).encode()).hexdigest()}
     return root, paths, records, fingerprints, thresholds
@@ -120,14 +157,16 @@ def write_json(path, value):
         stream.write("\n")
 
 
-def evaluate(config, split, run_id, validate=False, model=None):
+def evaluate(config, split, run_id, validate=False, model=None, scales=frozenset({1.0})):
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("Run ID must be 1-80 filename-safe characters")
+    if validate and scales != frozenset({1.0}):
+        raise ValueError("--validate is only supported for the original-scale (1.0) run")
     directory = RESULTS / run_id
     if (directory / f"predictions_{split}.json").exists() or (directory / f"metrics_{split}.json").exists():
         raise FileExistsError(f"Results already exist for {run_id}/{split}; use a new run ID")
     model_id, weight = resolve_model(model)
-    root, paths, records, fingerprints, thresholds = load_dataset(config, split)
+    root, paths, records, fingerprints, thresholds = load_dataset(config, split, scales)
     configure_cpu()
     from ultralytics import YOLO
 
@@ -163,6 +202,7 @@ def evaluate(config, split, run_id, validate=False, model=None):
     provenance = {
         "schema_version": 1, "model_id": model_id, "weight_sha256": sha256(weight),
         "dataset_config": str(Path(config).resolve()), "dataset_root": str(root), "split": split,
+        "scales": sorted(scales),
         "timestamp": datetime.now(UTC).isoformat(), "run_id": run_id, "seed": 42, "cpu_threads": 1,
         "python": sys.version, "packages": {name: importlib.metadata.version(name)
                                             for name in ("torch", "torchvision", "ultralytics", "numpy", "PyYAML",
@@ -171,6 +211,9 @@ def evaluate(config, split, run_id, validate=False, model=None):
     }
     write_json(directory / f"predictions_{split}.json", {"provenance": provenance, "images": records})
     metrics = {**provenance, **compute_metrics(records)}
+    if scales != frozenset({1.0}):
+        metrics["by_scale"] = {f"{s:g}": compute_metrics([r for r in records if r["scale"] == s])
+                               for s in sorted(scales)}
     if validate:
         # Use a portable generated YAML; never allow Ultralytics to fetch a dataset.
         validation_config = directory / f"dataset_{split}.yaml"
@@ -200,8 +243,10 @@ def main():
     parser.add_argument("--validate", action="store_true", help="Compare custom AP to Ultralytics val()")
     parser.add_argument("--model", type=Path, default=None,
                         help="Alternative checkpoint path; its SHA-256 is recorded in the metrics JSON")
+    parser.add_argument("--scales", default="1.0",
+                        help="Comma-separated dataset scales to evaluate (0.5, 0.75, 1.0); default 1.0")
     args = parser.parse_args()
-    evaluate(args.data, args.split, args.run_id, args.validate, args.model)
+    evaluate(args.data, args.split, args.run_id, args.validate, args.model, parse_scales(args.scales))
 
 
 if __name__ == "__main__":
