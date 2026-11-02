@@ -148,11 +148,17 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.engine == "crnn":
-        if args.crnn_checkpoint is None or args.crnn_expected_sha256 is None:
-            parser.error("--engine crnn requires --crnn-checkpoint and --crnn-expected-sha256")
+        from baseline.common.weights import model_entry, verified_path
         from models.crnn.engine import CRNNEngine
 
-        engine = CRNNEngine(args.crnn_checkpoint, args.crnn_expected_sha256)
+        if args.crnn_checkpoint is None and args.crnn_expected_sha256 is None:
+            entry = model_entry("crnn-full-training", manifest=args.weights_manifest)
+            checkpoint = verified_path("crnn-full-training", manifest=args.weights_manifest)
+            engine = CRNNEngine(checkpoint, entry["sha256"])
+        elif args.crnn_checkpoint is None or args.crnn_expected_sha256 is None:
+            parser.error("--engine crnn requires both --crnn-checkpoint and --crnn-expected-sha256, or neither")
+        else:
+            engine = CRNNEngine(args.crnn_checkpoint, args.crnn_expected_sha256)
     else:
         engine = EasyOCREngine(args.weights_directory, args.weights_manifest)
     run_inference(args, engine)
