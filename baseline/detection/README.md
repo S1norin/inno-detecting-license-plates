@@ -125,5 +125,26 @@ and train paths without starting training; it works in the CPU baseline
 environment. Training uses a separate NVIDIA GPU environment pinned in
 `models/yolo11_finetune/requirements-gpu.txt`. Baseline evaluation remains CPU-only.
 
+## Fine-tuned detector weights
+
+The team's fine-tuned YOLO11s checkpoint is pinned in
+`baseline/common/models.json` as `yolo11s-license-plate-finetuned` with a
+commit-pinned HuggingFace URL and SHA-256. Fetch and verify it like any other
+manifest entry; evaluation only verifies an existing local file and never
+downloads missing weights:
+
+```bash
+.venv-baseline/bin/python -m baseline.common.weights fetch yolo11s-license-plate-finetuned
+.venv-baseline/bin/python -m baseline.common.weights verify yolo11s-license-plate-finetuned
+```
+
+Evaluate the cached checkpoint by passing it to `--model` with the same
+settings as the pretrained baseline:
+
+```bash
+.venv-baseline/bin/python -m baseline.detection.evaluate --split val --run-id finetuned-val --model baseline/weights/yolo11_finetune/best.pt --validate
+.venv-baseline/bin/python -m baseline.detection.evaluate --split test --run-id finetuned-test --model baseline/weights/yolo11_finetune/best.pt
+```
+
 Lint from the root with `uv run ruff check baseline/` (or
 `python -m uv run ruff check baseline/` when uv is not on PATH).

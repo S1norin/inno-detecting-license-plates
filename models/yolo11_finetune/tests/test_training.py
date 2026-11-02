@@ -116,7 +116,8 @@ class InputTests(unittest.TestCase):
         self.assertNotIn("download", document)
         self.assertEqual(inputs["train"]["count"], 1)
         self.assertEqual(inputs["val"]["count"], 1)
-        self.assertEqual(Path(document["train"]).read_text(), (self.root / "train.txt").read_text())
+        self.assertEqual(Path(document["train"]).read_text(),
+                         f"{self.root.resolve() / 'images/train/original_s100.jpg'}\n")
         self.assertFalse((self.root / "must-not-read.txt").exists())
 
     def test_incomplete_training_split_refused(self):

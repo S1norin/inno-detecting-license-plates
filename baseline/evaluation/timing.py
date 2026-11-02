@@ -69,13 +69,28 @@ def _environment():
     return environment
 
 
-def run_probe(dataset, detector_weights, easyocr_weights, manifest, n, seed, timestamp):
+def _build_ocr_engine(ocr_engine, easyocr_weights, crnn_checkpoint, manifest):
+    """Construct the probe's OCR engine; EasyOCR stays the offline default."""
+    if ocr_engine == "crnn":
+        from baseline.common.weights import model_entry, sha256, verified_path
+        from models.crnn.engine import CRNNEngine
+
+        if crnn_checkpoint is None:
+            entry = model_entry("crnn-full-training", manifest=manifest)
+            return CRNNEngine(verified_path("crnn-full-training", manifest=manifest), entry["sha256"])
+        return CRNNEngine(crnn_checkpoint, sha256(crnn_checkpoint))
+    from baseline.ocr.engine import EasyOCREngine
+
+    return EasyOCREngine(easyocr_weights, manifest)
+
+
+def run_probe(dataset, detector_weights, easyocr_weights, manifest, n, seed, timestamp,
+              ocr_engine="easyocr", crnn_checkpoint=None):
     import time
 
     import cv2
     from ultralytics import YOLO
 
-    from baseline.ocr.engine import EasyOCREngine
     from baseline.ocr.io import MODES
     from data.preprocessing import preprocess_plate
 
@@ -103,7 +118,7 @@ def run_probe(dataset, detector_weights, easyocr_weights, manifest, n, seed, tim
     model = YOLO(str(detector_weights))
     measure("detection", lambda sample: model(str(dataset.root / sample["image_path"]), **settings, verbose=False))
 
-    engine = EasyOCREngine(easyocr_weights, manifest)
+    engine = _build_ocr_engine(ocr_engine, easyocr_weights, crnn_checkpoint, manifest)
     for mode in MODES:
         def recognize(sample, mode=mode):
             image = cv2.imread(str(dataset.root / sample["crop_path"]))
@@ -125,6 +140,8 @@ def run_probe(dataset, detector_weights, easyocr_weights, manifest, n, seed, tim
         "n": n,
         "seed": seed,
         "samples": samples,
+        "ocr_engine": ocr_engine,
+        "ocr_weight_digests": engine.weight_digests,
         "environment": _environment(),
         "stages": stages,
         "timestamp": timestamp,
