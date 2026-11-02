@@ -6,6 +6,13 @@
     "sha256": "95e50c25ab7066dd0ca5aec18fa80349676db08697780d1149576461174d2381"
   },
   {
+    "name": "crnn-full-training",
+    "url": "https://huggingface.co/Sinorin/inno-detecting-license-plates-weights/resolve/2b192b588216bf3088ab3853d163b5d3a2bead1e/ocr/crnn/checkpoint.pt",
+    "filename": "checkpoint.pt",
+    "cache_subdir": "crnn",
+    "sha256": "92d1fbeae19a81ddf3ae498a40e4416ed619ad9667736c592ccbb899e59ca2cc"
+  },
+  {
     "name": "easyocr-craft",
     "url": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip",
     "filename": "craft_mlt_25k.pth",
