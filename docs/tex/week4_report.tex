@@ -1,0 +1,217 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{url}
+\usepackage{xeCJK}
+\setCJKmainfont{Hiragino Sans GB}
+
+\title{Final technical summary\\ \large License plate detection and recognition on CCPD2019}
+\date{Final submission, 2 November 2026}
+
+\begin{document}
+\maketitle
+
+\noindent Code: \url{https://github.com/S1norin/inno-detecting-license-plates}
+
+\bigskip
+\textbf{Contributors}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Name & Email \\
+\midrule
+Mikhail Krylov & m.krylov@innopolis.university \\
+Maximilian Mifsud Bonici & m.mifsudbonici@innopolis.university \\
+Andrei Polevoi & a.polevoi@innopolis.university \\
+Evgenii Khovalyg & e.khovalyg@innopolis.university \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Task, dataset, and system}
+
+We detect and recognize Chinese license plates on a 5{,}000-photo CCPD2019
+subset expanded to 15{,}000 images (scale variants 1.0/0.75/0.5, 30 tilt
+angles). Splits are assigned \emph{before} resizing, so all variants of one
+photo stay in one split: 3{,}500/700/800 train/val/test per scale. Size
+buckets (plate width, train-derived): small $\le 83$~px, medium
+$\le 112$~px, large $> 112$~px; tilt bins 0--9/10--19/20$^{\circ}$.
+Primary metrics use the original-scale split; the 0.75/0.5 variants are
+evaluated in Section~\ref{sec:scale}.
+
+The system pairs a YOLO11s detector with a 3.0M-parameter grayscale CRNN
+(CNN + BiLSTM + CTC, 59 classes) recognizer. Detector variants:
+\textbf{frozen} (off-the-shelf \texttt{yolo11s-license-plate}) and
+\textbf{fine-tuned} (same backbone, 3{,}500 train images, 640~px, seed 42,
+RTX 3090~Ti, 1{,}439.8~s; best epoch 4 of 24). The CRNN was trained on the
+3{,}500 original-scale train crops (50 epochs, 39 selected, CPU,
+4{,}154.9~s). A frozen EasyOCR baseline (committed numbers) provides the
+off-the-shelf reference. All runs: shared harness, CPU single-threaded,
+IoU 0.5, conf 0.001, NMS 0.7, 640~px, seed 42, digest-verified weights.
+Recognition uses ground-truth crops (\texttt{ocr\_only}) or the detector's
+top-1 boxes (\texttt{end\_to\_end}); mode and abstention threshold are
+selected on validation only, then test is run once.
+
+\section{Detection (800 test images)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Model & Split & mAP@0.5 & Precision & Recall & F1 \\
+\midrule
+Frozen YOLO11s & val & 0.9245 & 0.9402 & 0.8986 & 0.9189 \\
+Frozen YOLO11s & test & 0.9073 & 0.9408 & 0.8938 & 0.9167 \\
+Fine-tuned YOLO11s & val & 0.9949 & 0.9549 & 0.9986 & 0.9763 \\
+Fine-tuned YOLO11s & test & 0.9949 & 0.9466 & 0.9975 & 0.9714 \\
+\bottomrule
+\end{tabular}
+\caption{Detection; the fine-tuned model was cross-checked with native
+Ultralytics validation (identical mAP to 1e-4).}
+\end{table}
+
+The gain from fine-tuning is dominated by recall
+(0.8938 $\rightarrow$ 0.9975): the frozen model misses 51 of 800 test
+images entirely (mostly large tilted plates), the fine-tuned model none.
+Its weakest scope is the 10--19$^{\circ}$ tilt bin (F1 0.9254).
+
+\section{Recognition (800 test plates, mode \texttt{none}, tau 0.5)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Engine & Protocol & Char.\ acc. & Exact plates & F1 \\
+\midrule
+EasyOCR (frozen) & ocr\_only & 0.3474 & 0 / 800 & --- \\
+EasyOCR (frozen) & end\_to\_end & 0.3240 & 0 / 800 & --- \\
+CRNN & ocr\_only & 0.7593 & 267 / 800 & 0.7271 \\
+CRNN & end\_to\_end + frozen & 0.6710 & 148 / 800 & 0.5676 \\
+CRNN & end\_to\_end + fine-tuned & 0.7661 & 296 / 800 & 0.7372 \\
+\bottomrule
+\end{tabular}
+\caption{Recognition on the test split.}
+\end{table}
+
+Preprocessing ablation (validation char.\ acc.): \texttt{none} 0.7558,
+\texttt{gray\_contrast} 0.7469, \texttt{canny} 0.4575 --- no preprocessing
+wins; Canny destroys glyph information. With the fine-tuned detector,
+end-to-end accuracy (0.7661) slightly \emph{exceeds} the ground-truth-crop
+number (0.7593): detector boxes no longer hurt recognition. Weakest
+recognition scopes (ocr\_only): large plates (0.5658, exact rate 0.1069)
+and the 10--19$^{\circ}$ bin (0.5193, exact rate 0.0000).
+
+\section{Scale robustness}\label{sec:scale}
+
+The 0.75/0.5 variants (800 test images/crops each) were evaluated with the
+same weights and selection policy; nothing was retrained.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & 1.0 & 0.75 & 0.5 \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{Detection (mAP@0.5 / F1)}} \\
+Frozen YOLO11s & 0.9073 / 0.9167 & 0.9218 / 0.9271 & 0.9294 / 0.9298 \\
+Fine-tuned YOLO11s & 0.9949 / 0.9714 & 0.9949 / 0.9726 & 0.9949 / 0.9708 \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{CRNN test character accuracy}} \\
+ocr\_only & 0.7593 & 0.7613 & 0.7610 \\
+end\_to\_end + fine-tuned & 0.7661 & 0.7629 & 0.7555 \\
+end\_to\_end + frozen & 0.6710 & 0.6713 & 0.6721 \\
+\bottomrule
+\end{tabular}
+\caption{Metrics by image/crop scale (test).}
+\end{table}
+
+Both detectors are flat across scales (frozen mAP 0.907 $\rightarrow$
+0.930; fine-tuned 0.9949 everywhere) and CRNN character accuracy is flat,
+because the 48$\times$256 crop resize normalizes away absolute image
+scale. The loss appears in per-variant size buckets: at 0.5 scale the
+medium/large buckets fall to 0.44/0.34 character accuracy while small
+stays at $\sim$0.80. The frozen detector's end-to-end gap to ocr\_only
+($\sim$0.09) is constant at every scale; fine-tuning removes it at every
+scale.
+
+\section{Runtime (Apple M3, CPU, 95 timed samples, seed 42)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Stage & Frozen detector & Fine-tuned detector \\
+\midrule
+Detection, median / p95 & 77.8 / 88.0~ms & 80.2 / 98.8~ms \\
+CRNN recognition, median / p95 & 5.6 / 6.3~ms & 5.7 / 6.6~ms \\
+Peak RSS & $\sim$508~MB & $\sim$498~MB \\
+\bottomrule
+\end{tabular}
+\caption{Single-threaded latency; preprocessing adds $\sim$0.4~ms. A full
+end-to-end image takes $\sim$83--86~ms.}
+\end{table}
+
+\section{Failure analysis}
+
+Representative failures from the regenerated test caches:
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{4.2cm}p{4.9cm}p{5.3cm}@{}}
+\toprule
+Sample & Observation & Likely cause \\
+\midrule
+\texttt{6f3c772c\ldots\_s100} (frozen) & Large plate, tilt 19$^{\circ}$,
+zero predictions & Weak prior for large plate aspect ratios; 10--19$^{\circ}$
+is the frozen model's weakest tilt bin \\
+\texttt{356b4ca6\ldots\_s100} (fine-tuned) & 11 boxes: 1 true (0.84) + 10
+false positives (0.18, 0.06, \ldots) & Fine-tuning removed misses but left
+low-confidence false positives on cluttered scenes \\
+\texttt{261f3b72\ldots\_s100} (CRNN) & GT \texttt{京K06350}, predicted
+\texttt{皖AF4069}; large, tilt 29$^{\circ}$ & Hallucination with low
+per-character confidence (min 0.24); large-plate glyphs outside the
+training distribution \\
+\bottomrule
+\end{tabular}
+\caption{Failures; all involve large and/or 10--19$^{\circ}$-tilted
+plates.}
+\end{table}
+
+Cross-cutting pattern: detection failures concentrate on \textbf{large +
+tilted} plates (the frozen model's blind spot, largely fixed by
+fine-tuning), while recognition failures concentrate on the \textbf{same
+large + 10--19$^{\circ}$} region, where the recognizer was effectively
+untrained. Both point at the same data gap: the dataset is dominated by
+small, near-0$^{\circ}$ plates.
+
+\section*{Limitations}
+
+EasyOCR numbers are a frozen baseline from an earlier machine (indicative,
+not a comparable run); fine-tuned YOLO training was done on a GPU and only
+inference was rerun locally; the timing probe measures single-threaded
+latency, not throughput. Next steps: a tilt/size-balanced training set and
+a taller CRNN input for large plates.
+
+\section*{References}
+
+\begin{itemize}
+\item Consolidated results with reproduction commands:
+  \texttt{docs/md/final\_results.md}
+\item Detection baseline: \texttt{baseline/detection/README.md};
+  fine-tuning: \texttt{models/yolo11\_finetune/REPORT.md}
+\item CRNN recognizer: \texttt{models/crnn/REPORT.md};
+  recognition baseline: \texttt{baseline/ocr/README.md}
+\item Repository: \url{https://github.com/S1norin/inno-detecting-license-plates}
+\end{itemize}
+
+\end{document}
