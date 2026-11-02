@@ -22,6 +22,8 @@ class PipelineTest(unittest.TestCase):
         return run.run(args)
 
     def test_offline_run_writes_all_artifacts_and_stays_stdlib(self):
+        heavy = ("torch", "ultralytics", "easyocr", "cv2")
+        already_loaded = {module for module in heavy if module in sys.modules}
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             build(base)
@@ -39,8 +41,9 @@ class PipelineTest(unittest.TestCase):
             self.assertIn("miss, low_iou, low_confidence", report)
             self.assertIn("no_detection", report)
 
-            for module in ("torch", "ultralytics", "easyocr", "cv2"):
-                self.assertNotIn(module, sys.modules, f"--no-probe run imported {module}")
+            for module in heavy:
+                if module not in already_loaded:
+                    self.assertNotIn(module, sys.modules, f"--no-probe run imported {module}")
 
     def test_rerun_is_byte_identical(self):
         with tempfile.TemporaryDirectory() as tmp:

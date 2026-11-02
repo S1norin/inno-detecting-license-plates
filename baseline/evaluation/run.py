@@ -46,6 +46,10 @@ def build_parser():
                         help="YOLO weights for the timing probe only.")
     parser.add_argument("--easyocr-weights", type=Path, default=EASYOCR_WEIGHTS_DEFAULT,
                         help="Offline EasyOCR weights directory for the timing probe only.")
+    parser.add_argument("--probe-engine", choices=("easyocr", "crnn"), default="easyocr",
+                        help="OCR engine for the timing probe (default: easyocr).")
+    parser.add_argument("--crnn-checkpoint", type=Path, default=None,
+                        help="CRNN checkpoint for the probe; defaults to the manifest entry.")
     parser.add_argument("--weights-manifest", type=Path, default=WEIGHTS_MANIFEST_DEFAULT,
                         help="Weight manifest for probe verification.")
     parser.add_argument("--timestamp", type=str, default=None,
@@ -79,6 +83,8 @@ def run(args):
             args.probe_n,
             args.probe_seed,
             timestamp,
+            ocr_engine=args.probe_engine,
+            crnn_checkpoint=args.crnn_checkpoint,
         )
         _write_json(out / "timing.json", timing)
 
