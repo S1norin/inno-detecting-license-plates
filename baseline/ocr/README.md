@@ -80,6 +80,14 @@ After permission, fetch the two pinned EasyOCR assets:
 .venv-baseline/bin/python -m baseline.common.weights verify easyocr-zh-sim-g2
 ```
 
+Fetch the team's CRNN full-training checkpoint, pinned in `baseline/common/models.json`
+with a commit-pinned HuggingFace URL and SHA-256:
+
+```bash
+.venv-baseline/bin/python -m baseline.common.weights fetch crnn-full-training
+.venv-baseline/bin/python -m baseline.common.weights verify crnn-full-training
+```
+
 The shared downloader separately verifies archive and extracted-file SHA-256
 values pinned in `baseline/common/models.json`, then promotes only the named
 weight into `baseline/weights/easyocr/`. Initial receipts were checked against
@@ -209,7 +217,21 @@ checkpoint SHA-256. See `models/crnn/REPORT.md` for the timing probe and
 the completed two-run reproducibility check. The 50-epoch run is separate
 from those short implementation-verification runs.
 
-Use the expected digest from the trusted training record for inference:
+With the manifest checkpoint fetched, inference needs no checkpoint flags:
+
+```bash
+.venv-baseline/bin/python -m baseline.ocr.run \
+  --protocol ocr_only --split val --mode none \
+  --engine crnn \
+  --output models/crnn/results/evaluation/ocr_only/raw_val_none.json
+```
+
+Omitting both checkpoint flags resolves `crnn-full-training` from
+`baseline/common/models.json` and verifies the cached file against the pinned
+SHA-256; nothing is downloaded implicitly. If the cache is missing, fetch it
+first with the command above. To use a freshly retrained checkpoint instead,
+pass both explicit flags, using the expected digest from the trusted training
+record:
 
 ```bash
 CRNN_SHA=$(.venv-baseline/bin/python -c \
@@ -234,7 +256,7 @@ $crnnSha = (Get-Content -Raw models/crnn/results/full-training/training_record.j
   --output models/crnn/results/evaluation/ocr_only/raw_val_none.json
 ```
 
-Both checkpoint flags are required for `--engine crnn`. The adapter verifies
+Supplying only one of the two checkpoint flags is an error. The adapter verifies
 SHA-256 before loading, uses the same greedy CTC collapse/confidence convention,
 and emits the existing raw-cache schema. Its identity includes architecture,
 input geometry, selected epoch, vocabulary digest, source digests, and runtime

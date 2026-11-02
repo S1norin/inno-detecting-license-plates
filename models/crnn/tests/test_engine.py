@@ -75,10 +75,31 @@ class RunnerCLITests(unittest.TestCase):
         easyocr.assert_called_once_with(Path("baseline/weights/easyocr"), Path("baseline/common/models.json"))
         self.assertIs(run.call_args.args[1], easyocr.return_value)
 
-    def test_crnn_requires_checkpoint_and_expected_digest(self):
-        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+    def test_crnn_partial_flags_refused(self):
+        for flags in (["--crnn-checkpoint", "checkpoint.pt"], ["--crnn-expected-sha256", "a" * 64]):
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                main([*self.arguments(), "--engine", "crnn", *flags])
+            self.assertEqual(error.exception.code, 2)
+
+    def test_crnn_manifest_resolution_when_flags_omitted(self):
+        entry = {"filename": "checkpoint.pt", "sha256": "b" * 64}
+        with patch("baseline.common.weights.model_entry", return_value=entry), \
+             patch("baseline.common.weights.verified_path",
+                   return_value=Path("baseline/weights/crnn/checkpoint.pt")) as resolved, \
+             patch("models.crnn.engine.CRNNEngine") as crnn, patch("baseline.ocr.run.run_inference") as run:
             main([*self.arguments(), "--engine", "crnn"])
-        self.assertEqual(error.exception.code, 2)
+        resolved.assert_called_once_with("crnn-full-training", manifest=Path("baseline/common/models.json"))
+        crnn.assert_called_once_with(Path("baseline/weights/crnn/checkpoint.pt"), "b" * 64)
+        self.assertIs(run.call_args.args[1], crnn.return_value)
+
+    def test_crnn_manifest_resolution_has_no_implicit_download(self):
+        entry = {"filename": "checkpoint.pt", "sha256": "b" * 64}
+        with patch("baseline.common.weights.model_entry", return_value=entry), \
+             patch("baseline.common.weights.verified_path", side_effect=FileNotFoundError("Missing cached weights")), \
+             patch("models.crnn.engine.CRNNEngine") as crnn:
+            with self.assertRaises(FileNotFoundError):
+                main([*self.arguments(), "--engine", "crnn"])
+            crnn.assert_not_called()
 
     def test_crnn_selection_constructs_requested_engine(self):
         with patch("models.crnn.engine.CRNNEngine") as crnn, patch("baseline.ocr.run.run_inference") as run:
