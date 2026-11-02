@@ -6,6 +6,13 @@
     "sha256": "95e50c25ab7066dd0ca5aec18fa80349676db08697780d1149576461174d2381"
   },
   {
+    "name": "yolo11s-license-plate-finetuned",
+    "url": "https://huggingface.co/Sinorin/inno-detecting-license-plates-weights/resolve/main/detection/yolo11_finetune/best.pt",
+    "filename": "best.pt",
+    "cache_subdir": "yolo11_finetune",
+    "sha256": "0a4f080fe3749b8be145101468a0dd98455cf50117d2acd37575f33e0d261055"
+  },
+  {
     "name": "crnn-full-training",
     "url": "https://huggingface.co/Sinorin/inno-detecting-license-plates-weights/resolve/2b192b588216bf3088ab3853d163b5d3a2bead1e/ocr/crnn/checkpoint.pt",
     "filename": "checkpoint.pt",
