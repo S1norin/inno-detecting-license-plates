@@ -32,7 +32,7 @@ def _show_sample(sample: Sample, with_box: bool = True):
         st.warning(f"Image file missing: {sample.image_path.name}")
         return
     shown = draw_box(image, sample.box, COLOR_GT, "ground truth") if with_box else image
-    st.image(shown, width='stretch')
+    st.image(shown, width=560)
     crop = load_image(sample.crop_path)
     if crop is not None:
         st.image(crop, width='content', caption="Ground-truth crop")
@@ -94,7 +94,7 @@ are exported for training.
     for col, s in zip(cols, ordered, strict=True):
         img = load_image(s.image_path)
         if img is not None:
-            col.image(draw_box(img, s.box, COLOR_GT, f"scale {s.scale:g}"), width='stretch')
+            col.image(draw_box(img, s.box, COLOR_GT, f"scale {s.scale:g}"), width=200)
             col.caption(f"{s.width}×{s.height}, plate {s.plate_pixel_height} px ({s.size_bucket})")
 
     st.subheader("How the dataset was prepared")
@@ -128,7 +128,7 @@ This is a custom selection, not the official CCPD benchmark split.
         cols = st.columns(3)
         for col, mode in zip(cols, ["none", "gray_contrast", "canny"], strict=True):
             out = preprocess_plate(crop, mode)
-            col.image(gray_to_bgr(out), width='stretch', caption=mode)
+            col.image(gray_to_bgr(out), width=200, caption=mode)
         st.markdown(
             f"Validation character accuracy: `none` **{results.PREPROCESSING_VAL['none']:.4f}**, "
             f"`gray_contrast` {results.PREPROCESSING_VAL['gray_contrast']:.4f}, "

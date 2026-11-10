@@ -87,13 +87,13 @@ separately and labeled.
         if image is None:
             st.error("Could not decode the uploaded image.")
             return
-        st.image(image, width='stretch', caption=f"Uploaded: {uploaded.name} (no ground truth)")
+        st.image(image, width=560, caption=f"Uploaded: {uploaded.name} (no ground truth)")
     elif sample is not None:
         image = load_image(sample.image_path)
         if image is None:
             st.warning(f"Image file missing: {sample.image_path.name}")
             return
-        st.image(image, width='stretch',
+        st.image(image, width=560,
                  caption=f"{sample.sample_id} — {sample.split}, scale {sample.scale:g}, "
                          f"plate {sample.plate_pixel_height} px, text `{sample.plate_text}`")
     else:
@@ -131,7 +131,7 @@ separately and labeled.
         col.markdown(f"**{label}** — {len(det_res.detections)} box(es), {det_res.elapsed_ms:.0f} ms")
         col.image(
             draw_detections(image, det_res.detections, color),
-            width='stretch',
+            width=340,
         )
         if not det_res.detections:
             col.warning("No detection at this confidence floor.")
@@ -156,7 +156,7 @@ separately and labeled.
     st.subheader("4 — Preprocessing ablation (experimental alternatives)")
     cols = st.columns(3)
     for col, mode in zip(cols, ["none", "gray_contrast", "canny"], strict=True):
-        col.image(gray_to_bgr(preprocess_plate(crop, mode)), width='stretch', caption=mode)
+        col.image(gray_to_bgr(preprocess_plate(crop, mode)), width=200, caption=mode)
 
     st.subheader("5 — CRNN recognition")
     recog = res["recognition"]

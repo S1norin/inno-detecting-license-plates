@@ -117,9 +117,9 @@ def _show_case(case: dict):
         color = COLOR_FROZEN if key == "frozen" else COLOR_FINETUNED
         label = "frozen" if key == "frozen" else "fine-tuned"
         shown = draw_detections(shown, live["dets"][key], color, max_labels=5)
-        c1.image(shown, width='stretch', caption=f"GT box + live {label} predictions (conf 0.001)")
+        c1.image(shown, width=420, caption=f"GT box + live {label} predictions (conf 0.001)")
     else:
-        c1.image(shown, width='stretch', caption="GT box")
+        c1.image(shown, width=420, caption="GT box")
     crop = live.get("crop")
     if crop is not None:
         crop_caption = (
@@ -127,7 +127,7 @@ def _show_case(case: dict):
             if case.get("protocol") == "ocr_only"
             else "Crop fed to the CRNN (top-1 detector box)"
         )
-        c2.image(crop, width='stretch', caption=crop_caption)
+        c2.image(crop, width=260, caption=crop_caption)
     if live.get("recog") is not None:
         c2.markdown(f"**Live CRNN:** `{live['recog'].text}`  ")
         c2.caption("per-char conf: " + ", ".join(f"{v:.2f}" for v in live["recog"].char_confidences))
