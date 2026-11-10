@@ -40,7 +40,13 @@ div[data-testid="stSidebar"] { background-color: #12161f; }
 .stButton > button:hover { background-color: #3d82c9; }
 .stAlert { border-radius: 8px; }
 [data-testid="stExpander"] { background: #171c26; border: 1px solid #2a3242; border-radius: 8px; }
-img { border-radius: 6px; }
+[data-testid="stImage"] img {
+    border-radius: 6px;
+    max-height: min(55vh, 480px);
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+}
 </style>
 """,
     unsafe_allow_html=True,

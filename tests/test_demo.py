@@ -160,6 +160,32 @@ class TestViz:
         assert bgr.shape == (10, 20, 3)
 
 
+class TestDemoInteractions:
+    def test_plate_text_search_and_literal_query(self, monkeypatch):
+        import pandas as pd
+
+        from demo.sections import dataset_explorer, pipeline
+
+        frame = pd.DataFrame([
+            {"split": "test", "scale": 1.0, "image_path": "images/abc.jpg", "plate_text": "皖A12345"},
+        ])
+        for section, select in ((dataset_explorer, dataset_explorer._select_sample), (pipeline, pipeline._pick_sample)):
+            monkeypatch.setattr(section, "_frame", lambda: frame)
+            monkeypatch.setattr(section, "_row_to_sample", lambda row: row["plate_text"])
+            assert select("test", 1.0, "皖A123") == "皖A12345"
+            assert select("test", 1.0, "[") is None
+
+    def test_failure_check_does_not_assert_unverified_false_positives(self):
+        from demo.sections.failures import _check
+        from demo.yolo import Detection
+
+        case = {"stage": "detection", "detector": "finetuned", "title": "False positives"}
+        box = Detection(0, 0, 10, 10, 0.8)
+        ok, detail = _check(case, {"dets": {"finetuned": [box, box]}})
+        assert not ok
+        assert "box matching" in detail
+
+
 class TestWeights:
     def test_sha256_of(self, tmp_path):
         p = tmp_path / "f.bin"

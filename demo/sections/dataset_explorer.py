@@ -20,7 +20,9 @@ def _select_sample(split: str, scale: float, query: str) -> Sample | None:
     frame = _frame()
     sub = frame[(frame["split"] == split) & (frame["scale"] == scale)]
     if query:
-        sub = sub[sub["image_path"].str.contains(query, case=False, na=False)]
+        matches = sub["image_path"].str.contains(query, case=False, na=False, regex=False)
+        matches |= sub["plate_text"].str.contains(query, case=False, na=False, regex=False)
+        sub = sub[matches]
     if sub.empty:
         return None
     return _row_to_sample(sub.iloc[0])
@@ -32,10 +34,10 @@ def _show_sample(sample: Sample, with_box: bool = True):
         st.warning(f"Image file missing: {sample.image_path.name}")
         return
     shown = draw_box(image, sample.box, COLOR_GT, "ground truth") if with_box else image
-    st.image(shown, width=560)
+    st.image(shown, width=560, channels="BGR")
     crop = load_image(sample.crop_path)
     if crop is not None:
-        st.image(crop, width='content', caption="Ground-truth crop")
+        st.image(crop, width=300, channels="BGR", caption="Ground-truth crop")
 
 
 def render():
@@ -94,7 +96,7 @@ are exported for training.
     for col, s in zip(cols, ordered, strict=True):
         img = load_image(s.image_path)
         if img is not None:
-            col.image(draw_box(img, s.box, COLOR_GT, f"scale {s.scale:g}"), width=200)
+            col.image(draw_box(img, s.box, COLOR_GT, f"scale {s.scale:g}"), width=200, channels="BGR")
             col.caption(f"{s.width}×{s.height}, plate {s.plate_pixel_height} px ({s.size_bucket})")
 
     st.subheader("How the dataset was prepared")
@@ -128,7 +130,7 @@ This is a custom selection, not the official CCPD benchmark split.
         cols = st.columns(3)
         for col, mode in zip(cols, ["none", "gray_contrast", "canny"], strict=True):
             out = preprocess_plate(crop, mode)
-            col.image(gray_to_bgr(out), width=200, caption=mode)
+            col.image(gray_to_bgr(out), width=200, channels="BGR", caption=mode)
         st.markdown(
             f"Validation character accuracy: `none` **{results.PREPROCESSING_VAL['none']:.4f}**, "
             f"`gray_contrast` {results.PREPROCESSING_VAL['gray_contrast']:.4f}, "

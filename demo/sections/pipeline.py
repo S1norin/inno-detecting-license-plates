@@ -29,7 +29,9 @@ def _pick_sample(split: str, scale: float, query: str) -> Sample | None:
     frame = _frame()
     sub = frame[(frame["split"] == split) & (frame["scale"] == scale)]
     if query:
-        sub = sub[sub["image_path"].str.contains(query, case=False, na=False)]
+        matches = sub["image_path"].str.contains(query, case=False, na=False, regex=False)
+        matches |= sub["plate_text"].str.contains(query, case=False, na=False, regex=False)
+        sub = sub[matches]
     if sub.empty:
         return None
     return _row_to_sample(sub.iloc[0])
@@ -79,6 +81,7 @@ separately and labeled.
     sample: Sample | None = _pick_sample(split, scale, query.strip())
     image = None
     if uploaded is not None:
+        sample = None
         raw = uploaded.getvalue()
         if len(raw) > 8 * 1024 * 1024:
             st.error("Upload too large (max 8 MB).")
@@ -87,13 +90,13 @@ separately and labeled.
         if image is None:
             st.error("Could not decode the uploaded image.")
             return
-        st.image(image, width=560, caption=f"Uploaded: {uploaded.name} (no ground truth)")
+        st.image(image, width=560, channels="BGR", caption=f"Uploaded: {uploaded.name} (no ground truth)")
     elif sample is not None:
         image = load_image(sample.image_path)
         if image is None:
             st.warning(f"Image file missing: {sample.image_path.name}")
             return
-        st.image(image, width=560,
+        st.image(image, width=560, channels="BGR",
                  caption=f"{sample.sample_id} — {sample.split}, scale {sample.scale:g}, "
                          f"plate {sample.plate_pixel_height} px, text `{sample.plate_text}`")
     else:
@@ -102,15 +105,15 @@ separately and labeled.
 
     st.subheader("2 — Detection")
     col_d, col_e, col_f = st.columns([3, 1, 2])
-    conf = col_d.slider("Confidence floor (display only)", 0.01, 0.9, 0.25, 0.01)
+    conf = col_d.slider("Detection confidence threshold", 0.01, 0.9, 0.25, 0.01)
     mode = col_f.selectbox("OCR preprocessing (experimental mode)",
                            ["none", "gray_contrast", "canny"], index=0,
                            help="Applied to the crop before the CRNN; see the ablation in Experiments.")
     run = col_e.button("Run inference", type="primary")
     st.caption(
         "Canonical metrics used conf 0.001 for mAP and fixed settings "
-        "(imgsz 640, NMS IoU 0.7, CPU). Moving this slider changes only the "
-        "boxes you see here, not the reported numbers."
+        "(imgsz 640, NMS IoU 0.7, CPU). This threshold changes live detection "
+        "and the crop sent to OCR, but not the reported numbers."
     )
 
     if not run:
@@ -132,6 +135,7 @@ separately and labeled.
         col.image(
             draw_detections(image, det_res.detections, color),
             width=340,
+            channels="BGR",
         )
         if not det_res.detections:
             col.warning("No detection at this confidence floor.")
@@ -143,12 +147,12 @@ separately and labeled.
         return
     crop = res["crop"]
     c1, c2 = st.columns(2)
-    c1.image(crop, width='content',
+    c1.image(crop, width=300, channels="BGR",
              caption=f"Predicted crop, conf {top.confidence:.2f} (this is what the CRNN sees)")
     if sample is not None:
         gt_crop = load_image(sample.crop_path)
         if gt_crop is not None:
-            c2.image(gt_crop, width='content',
+            c2.image(gt_crop, width=300, channels="BGR",
                      caption="Ground-truth crop (from the annotation box)")
     else:
         c2.caption("No ground truth for uploaded images.")
@@ -156,7 +160,7 @@ separately and labeled.
     st.subheader("4 — Preprocessing ablation (experimental alternatives)")
     cols = st.columns(3)
     for col, mode in zip(cols, ["none", "gray_contrast", "canny"], strict=True):
-        col.image(gray_to_bgr(preprocess_plate(crop, mode)), width=200, caption=mode)
+        col.image(gray_to_bgr(preprocess_plate(crop, mode)), width=200, channels="BGR", caption=mode)
 
     st.subheader("5 — CRNN recognition")
     recog = res["recognition"]
