@@ -64,6 +64,23 @@ are exported for training.
         "file names, not independently calibrated angles."
     )
 
+    st.subheader("How we prevent data leakage")
+    st.markdown(
+        """
+<div class="diagram-flow" role="img"
+     aria-label="5000 photos split into 3500 train, 700 validation and 800 test, then resized to three scales.">
+  <span class="diagram-step">5,000 source photos</span><span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">Split by photo<br><small>3,500 train · 700 val · 800 test</small></span>
+  <span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">Resize within each split<br><small>1.0 · 0.75 · 0.5</small></span>
+  <span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">15,000 variants</span>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.caption("All three variants of a source photo stay in the same split.")
+
     st.subheader("Browse real samples")
     col_a, col_b, col_c = st.columns([2, 1, 2])
     split = col_a.selectbox("Split", ["test", "val", "train"], index=0)

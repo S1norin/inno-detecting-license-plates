@@ -40,6 +40,10 @@ div[data-testid="stSidebar"] { background-color: #12161f; }
 .stButton > button:hover { background-color: #3d82c9; }
 .stAlert { border-radius: 8px; }
 [data-testid="stExpander"] { background: #171c26; border: 1px solid #2a3242; border-radius: 8px; }
+.diagram-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1rem 0; }
+.diagram-step { background: #171c26; border: 1px solid #40516c; border-radius: 8px;
+    padding: 0.6rem 0.8rem; font-size: 0.95rem; }
+.diagram-arrow { color: #9aa7bd; font-size: 1.2rem; }
 [data-testid="stImage"] img {
     border-radius: 6px;
     max-height: min(55vh, 480px);

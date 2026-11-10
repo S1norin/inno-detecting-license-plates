@@ -47,7 +47,7 @@ def render():
 - **Weights:** Hugging Face `Sinorin/inno-detecting-license-plates-weights`
   (our fine-tuned YOLO11s + CRNN) and `morsetechlab/yolov11-license-plate-detection`
   (frozen YOLO11s). All weights are SHA-256 pinned in `baseline/common/models.json`
-  and re-verified on every app start.
+  and checked when models are loaded or this page is rendered.
 - **Canonical results:** `docs/md/final_results.md` (2026-11-02) — the single
   source for every metric shown in Experiments.
 - **Protocols:** `ocr_only` = ground-truth crops; `end_to_end` = detector's

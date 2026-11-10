@@ -29,6 +29,23 @@ two-stage system fail — and why?
     st.subheader("Two-stage architecture")
     st.markdown(
         """
+<div class="diagram-flow" role="img"
+     aria-label="Photo goes to YOLO11s, then the detected plate crop goes to CRNN, producing text.">
+  <span class="diagram-step">Traffic photo</span><span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">YOLO11s<br><small>detect plate</small></span>
+  <span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">Top box<br><small>crop plate</small></span>
+  <span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">CRNN<br><small>read characters</small></span>
+  <span class="diagram-arrow" aria-hidden="true">→</span>
+  <span class="diagram-step">Recognized text</span>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.caption("Live demo shows the raw CRNN reading; the historical abstention policy is not applied.")
+    st.markdown(
+        """
 | Stage | Model | Input | Output |
 |---|---|---|---|
 | **1 — Detection** | YOLO11s (frozen or fine-tuned) | full photo, 640 px | boxes + confidences |

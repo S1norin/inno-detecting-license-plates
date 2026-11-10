@@ -63,7 +63,8 @@ def render():
 
 Real inference on the real checkpoints (SHA-256 verified at load). Everything
 under **Run** is a live model prediction; ground-truth annotations are shown
-separately and labeled.
+separately and labeled. This demo displays the raw reading and does not apply
+the historical confidence gate or abstention policy.
 """
     )
 

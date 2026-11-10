@@ -129,7 +129,7 @@ complete misses. Precision stays roughly flat.
 The recognizer emits a per-character confidence (max probability in each
 collapsed CTC run). A policy of threshold **τ = 0.50** — selected on the 700
 validation samples by accepted-exact-accuracy + coverage − 1 — accepts a
-reading only when all character confidences are above τ, otherwise the system
+reading when the mean character confidence is at least τ; otherwise the system
 abstains. The test split was then run **once** under that policy.
 
 A single-image confidence value shown in the Pipeline Inspector is a live
