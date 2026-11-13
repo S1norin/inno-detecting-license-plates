@@ -29,3 +29,12 @@ baseline/evaluation/figures/*.png
 !baseline/evaluation/figures/baseline_comparison.png
 
 docs/md/template/
+
+# LaTeX build artifacts (regenerable; built PDFs are kept in docs/pdf/)
+docs/tex/*.aux
+docs/tex/*.log
+docs/tex/*.out
+docs/tex/*.nav
+docs/tex/*.snm
+docs/tex/*.toc
+docs/tex/*.pdf
