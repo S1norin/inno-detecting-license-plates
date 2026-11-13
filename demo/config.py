@@ -14,6 +14,8 @@ WEIGHTS_DIR = ROOT / "baseline" / "weights"
 WEIGHT_FROZEN = WEIGHTS_DIR / "license-plate-finetune-v1s.pt"  # filename per models.json
 WEIGHT_FINETUNED = WEIGHTS_DIR / "yolo11_finetune" / "best.pt"
 WEIGHT_CRNN = WEIGHTS_DIR / "crnn" / "checkpoint.pt"
+EASYOCR_WEIGHTS_DIR = WEIGHTS_DIR / "easyocr"
+EASYOCR_MANIFEST = ROOT / "baseline" / "common" / "models.json"
 
 # Pinned SHA-256 digests from baseline/common/models.json
 DIGEST_FROZEN = "95e50c25ab7066dd0ca5aec18fa80349676db08697780d1149576461174d2381"

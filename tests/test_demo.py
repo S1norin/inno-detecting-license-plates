@@ -186,6 +186,88 @@ class TestDemoInteractions:
         assert "box matching" in detail
 
 
+class TestEasyOcrAdapter:
+    def test_offline_weights_present(self):
+        import json
+
+        from demo.config import EASYOCR_MANIFEST, EASYOCR_WEIGHTS_DIR
+
+        for name in ("craft_mlt_25k.pth", "zh_sim_g2.pth"):
+            assert (EASYOCR_WEIGHTS_DIR / name).is_file()
+        assert EASYOCR_MANIFEST.is_file()
+        json.loads(EASYOCR_MANIFEST.read_text(encoding="utf-8"))
+
+    def test_result_dataclass(self):
+        from demo.easy_ocr import EasyOCRResult
+
+        result = EasyOCRResult(text="皖A12345", char_confidences=(0.9, 0.8), elapsed_ms=12.0)
+        assert result.text == "皖A12345"
+        assert result.char_confidences == (0.9, 0.8)
+
+
+class TestPipelineRun:
+    def _fake_detector(self, dets):
+        class _Result:
+            def __init__(self, detections, ms):
+                self.detections = detections
+                self.elapsed_ms = ms
+
+        class _Detector:
+            def detect(self, image, conf=0.25):
+                return _Result(dets, 1.0)
+
+        return _Detector()
+
+    def _fake_reader(self):
+        class _Rec:
+            text = "X1"
+            char_confidences = (0.9,)
+            elapsed_ms = 2.0
+
+        class _Reader:
+            def recognize(self, crop):
+                return _Rec()
+
+        return _Reader()
+
+    def test_run_all_per_detector_crops_and_recognitions(self):
+        from demo.sections import pipeline
+        from demo.yolo import Detection
+
+        image = _make_image()
+        detectors = {
+            "frozen": self._fake_detector([Detection(0.9, 150, 100, 450, 200)]),
+            "finetuned": self._fake_detector([]),
+        }
+        out = pipeline._run_all(image, detectors, self._fake_reader(), 0.25, "none")
+        assert out["tops"]["frozen"] is not None
+        assert out["crops"]["frozen"] is not None
+        assert out["recs"]["frozen"] is not None
+        assert out["tops"]["finetuned"] is None
+        assert out["crops"]["finetuned"] is None
+        assert out["recs"]["finetuned"] is None
+        assert out["total_ms"] >= 0
+
+    def test_run_all_applies_preprocessing(self):
+        from demo.sections import pipeline
+        from demo.yolo import Detection
+
+        image = _make_image()
+        box = [Detection(0.9, 150, 100, 450, 200)]
+        detectors = {"frozen": self._fake_detector(box), "finetuned": self._fake_detector(box)}
+        out = pipeline._run_all(image, detectors, self._fake_reader(), 0.25, "canny")
+        assert out["processed"]["frozen"].ndim == 2  # Canny output is grayscale
+
+    def test_scale_images_for_upload(self):
+        from demo.sections import pipeline
+
+        image = _make_image()  # 400 x 600
+        out = pipeline._scale_images(None, image, True)
+        assert out[1.0].shape == (400, 600, 3)
+        assert out[0.75].shape == (300, 450, 3)
+        assert out[0.5].shape == (200, 300, 3)
+
+
 class TestWeights:
     def test_sha256_of(self, tmp_path):
         p = tmp_path / "f.bin"
