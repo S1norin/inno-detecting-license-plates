@@ -2,8 +2,9 @@
 
 Interactive research demo for the CCPD2019 license plate project. The
 Streamlit app provides a dataset explorer, historical results and live CPU
-inference with frozen and fine-tuned YOLO11s detectors and a CRNN recognizer.
-See `demo/DEMO_SCRIPT.md` for presentation notes.
+inference with frozen and fine-tuned YOLO11s detectors and two OCR engines
+(CRNN and the EasyOCR baseline). See `demo/DEMO_SCRIPT.md` for presentation
+notes.
 
 ## Installation for a human
 
@@ -50,8 +51,17 @@ crop directories are gitignored and are not included in a normal clone.
    ```
 
    Weights go under gitignored `baseline/weights/`. Do not substitute
-   unverified checkpoints. EasyOCR is shown only as a historical baseline and
-   is not required for live inference.
+   unverified checkpoints. The EasyOCR baseline additionally needs the
+   pinned offline weights in `baseline/weights/easyocr/` (verified against
+   `baseline/common/models.json`) and `easyocr==1.7.2` installed in the demo
+   environment:
+
+   ```bash
+   uv pip install --python .venv/bin/python 'easyocr==1.7.2'
+   ```
+
+   If easyocr is missing, the app still runs and the Pipeline Inspector shows
+   an install hint instead of EasyOCR results.
 
 4. Prepare the data. If an existing complete `data/dataset/` already contains
    `images/`, `crops_gt/` and `metadata.csv`, preserve it and skip regeneration.
@@ -132,7 +142,8 @@ crop directories are gitignored and are not included in a normal clone.
 ## Code map
 
 - `demo/app.py` — entry point, theme and navigation.
-- `demo/dataset.py`, `demo/yolo.py`, `demo/crnn.py` — data and model adapters.
+- `demo/dataset.py`, `demo/yolo.py`, `demo/crnn.py`, `demo/easy_ocr.py` — data
+  and model adapters.
 - `demo/weights_io.py`, `demo/viz.py` — weight checks and visualization.
 - `demo/results.py` — historical metrics from `docs/md/final_results.md`.
 - `demo/sections/` — the app sections.
