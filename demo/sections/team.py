@@ -78,5 +78,5 @@ canonical settings (imgsz 640, NMS IoU 0.7, single-threaded CRNN).
     st.caption(
         "Historical results (Experiments section) were measured on an Apple M3 "
         "and an RTX 3090 Ti per the final report; live predictions in the "
-        "Pipeline Inspector and Failure Analysis run on this server."
+        "Detection and Recognition and Failure Analysis sections run on this server."
     )

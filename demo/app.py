@@ -63,8 +63,8 @@ with st.sidebar:
         "Navigate",
         [
             "Overview",
-            "Dataset Explorer",
-            "Pipeline Inspector",
+            "Dataset",
+            "Detection and Recognition",
             "Experiments",
             "Failure Analysis",
             "Team & Reproducibility",
@@ -79,9 +79,9 @@ with st.sidebar:
 
 if section == "Overview":
     overview.render()
-elif section == "Dataset Explorer":
+elif section == "Dataset":
     dataset_explorer.render()
-elif section == "Pipeline Inspector":
+elif section == "Detection and Recognition":
     pipeline.render()
 elif section == "Experiments":
     experiments.render()

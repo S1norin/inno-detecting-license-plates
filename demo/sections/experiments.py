@@ -132,7 +132,7 @@ validation samples by accepted-exact-accuracy + coverage − 1 — accepts a
 reading when the mean character confidence is at least τ; otherwise the system
 abstains. The test split was then run **once** under that policy.
 
-A single-image confidence value shown in the Pipeline Inspector is a live
+A single-image confidence value shown in the Detection and Recognition section is a live
 per-sample measurement; it does not reproduce this test-set policy curve.
 """
     )
@@ -150,6 +150,6 @@ per-sample measurement; it does not reproduce this test-set policy curve.
 | Full end-to-end | ~{rt['end_to_end_ms']} ms | ~{rt['end_to_end_ms']} ms |
 
 These are historical measurements on the stated hardware. Live runtimes on
-this server are shown in the Pipeline Inspector and labeled as such.
+this server are shown in the Detection and Recognition section and labeled as such.
 """
     )

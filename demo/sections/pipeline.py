@@ -1,5 +1,6 @@
-"""Live Pipeline Inspector: real YOLO + CRNN/EasyOCR inference on a selected image."""
+"""Detection and Recognition: live YOLO + CRNN/EasyOCR inference on a selected image."""
 
+import math
 import time
 
 import cv2
@@ -10,13 +11,14 @@ import streamlit as st
 from data.preprocessing import preprocess_plate
 
 from ..crnn import CRNNRecognizer
-from ..dataset import Sample, _row_to_sample, load_image, load_metadata, variants_of
+from ..dataset import Sample, _row_to_sample, load_image, load_metadata, thumbnail, variants_of
 from ..easy_ocr import EasyOCRReader
 from ..viz import COLOR_FINETUNED, COLOR_FROZEN, crop_box, draw_detections, gray_to_bgr
 from ..yolo import YOLODetector, get_detectors
 
 ENGINES = ("CRNN", "EasyOCR")
 SCALES = (1.0, 0.75, 0.5)
+PER_PAGE = 12
 
 
 @st.cache_resource
@@ -32,18 +34,6 @@ def _crnn() -> CRNNRecognizer:
 @st.cache_resource
 def _easyocr() -> EasyOCRReader:
     return EasyOCRReader()
-
-
-def _pick_sample(split: str, scale: float, query: str) -> Sample | None:
-    frame = _frame()
-    sub = frame[(frame["split"] == split) & (frame["scale"] == scale)]
-    if query:
-        matches = sub["image_path"].str.contains(query, case=False, na=False, regex=False)
-        matches |= sub["plate_text"].str.contains(query, case=False, na=False, regex=False)
-        sub = sub[matches]
-    if sub.empty:
-        return None
-    return _row_to_sample(sub.iloc[0])
 
 
 def _reader(engine: str):
@@ -150,7 +140,7 @@ def _run_all_scales(images: dict[float, np.ndarray], detectors, reader, conf: fl
 def render():
     st.markdown(
         """
-# Live Pipeline Inspector
+# Detection and Recognition
 
 Real inference on the real checkpoints (SHA-256 verified at load). Everything
 under **Run** is a live model prediction; ground-truth annotations are shown
@@ -164,17 +154,35 @@ recognizer), each reading the crops of both detectors.
     )
 
     st.subheader("1 — Input")
-    col_a, col_b, col_c = st.columns([2, 1, 2])
+    col_a, col_b = st.columns(2)
     split = col_a.selectbox("Split", ["test", "val", "train"], index=0)
     scale = col_b.selectbox("Scale", [1.0, 0.75, 0.5], index=0, format_func=lambda s: f"{s:g}")
-    query = col_c.text_input("Sample ID / plate text filter", "6f3c772c")
+
+    frame = _frame()
+    sub = frame[(frame["split"] == split) & (frame["scale"] == scale)]
+    n_pages = max(1, math.ceil(len(sub) / PER_PAGE))
+    page = st.slider("Page", 1, n_pages, 1, key=f"pipe_page_{split}_{scale:g}")
+    window = sub.iloc[(page - 1) * PER_PAGE : page * PER_PAGE]
+
+    grid = st.columns(4)
+    for i, (path, row) in enumerate(window.iterrows()):
+        col = grid[i % 4]
+        col.image(thumbnail(path), channels="BGR", width="stretch")
+        if col.button(row["plate_text"], key=f"pipe_pick_{path}", help=path):
+            st.session_state["pipe_picked"] = path
+            st.rerun()
+
+    picked = st.session_state.get("pipe_picked")
+    if picked is not None and picked in sub.index:
+        sample = _row_to_sample(sub.loc[picked])
+    else:
+        sample = _row_to_sample(window.iloc[0])
 
     uploaded = st.file_uploader(
         "…or upload your own photo (ground truth unavailable)",
         type=["jpg", "jpeg", "png", "webp"],
     )
 
-    sample: Sample | None = _pick_sample(split, scale, query.strip())
     image = None
     if uploaded is not None:
         sample = None
@@ -186,33 +194,25 @@ recognizer), each reading the crops of both detectors.
         if image is None:
             st.error("Could not decode the uploaded image.")
             return
-        st.image(image, width=560, channels="BGR", caption=f"Uploaded: {uploaded.name} (no ground truth)")
-    elif sample is not None:
+        st.image(image, channels="BGR", caption=f"Uploaded: {uploaded.name} (no ground truth)")
+    else:
         image = load_image(sample.image_path)
         if image is None:
             st.warning(f"Image file missing: {sample.image_path.name}")
             return
-        st.image(image, width=560, channels="BGR",
+        st.image(image, channels="BGR",
                  caption=f"{sample.sample_id} — {sample.split}, scale {sample.scale:g}, "
                          f"plate {sample.plate_pixel_height} px, text `{sample.plate_text}`")
-    else:
-        st.info("No sample matches the filter.")
-        return
 
     st.subheader("2 — Detection")
     col_d, col_e, col_f, col_g = st.columns([3, 1, 2, 2])
-    conf = col_d.slider("Detection confidence threshold", 0.01, 0.9, 0.25, 0.01)
+    conf = col_d.slider("Detection confidence threshold", 0.01, 0.9, 0.5, 0.01)
     engine = col_e.selectbox("OCR engine", list(ENGINES), index=0,
                              help="EasyOCR: general-purpose baseline OCR. CRNN: the plate-specific recognizer.")
     mode = col_f.selectbox("OCR preprocessing (experimental mode)",
                            ["none", "gray_contrast", "canny"], index=0,
                            help="Applied to the crop before OCR; see the ablation in Experiments.")
     run = col_g.button("Run inference", type="primary")
-    st.caption(
-        "Canonical metrics used conf 0.001 for mAP and fixed settings "
-        "(imgsz 640, NMS IoU 0.7, CPU). This threshold changes live detection "
-        "and the crop sent to OCR, but not the reported numbers."
-    )
 
     if not run:
         st.info("Press **Run inference** to execute the real models.")
@@ -242,7 +242,7 @@ recognizer), each reading the crops of both detectors.
         if not det_res.detections:
             col.warning("No detection at this confidence floor.")
 
-    st.subheader(f"3 — Crops & readings ({engine})")
+    st.subheader("3 — Crops & readings")
     c1, c2 = st.columns(2)
     _show_reading(c1, res["recs"]["frozen"], engine, sample, res["crops"]["frozen"],
                   res["processed"]["frozen"], mode, res["tops"]["frozen"],
@@ -262,8 +262,8 @@ recognizer), each reading the crops of both detectors.
     if sample is not None and top is not None:
         gt_crop = load_image(sample.crop_path)
         if gt_crop is not None:
-            st.image(gt_crop, width=220, channels="BGR",
-                     caption="Ground-truth crop (from the annotation box)")
+            st.markdown("**Ground truth crop**")
+            st.image(gt_crop, width=220, channels="BGR")
     elif sample is None:
         st.caption("No ground truth for uploaded images.")
 
@@ -274,34 +274,32 @@ recognizer), each reading the crops of both detectors.
             col.image(gray_to_bgr(preprocess_plate(crop, m)), width=200, channels="BGR", caption=m)
 
     st.subheader("4 — Same photo, all scales (fine-tuned models)")
-    scale_run = st.button("Run on scales 1.0 / 0.75 / 0.5")
-    if scale_run:
-        images = _scale_images(sample, image, uploaded is not None)
-        if not images:
-            st.warning("No scale variants available for this image.")
-        else:
-            with st.spinner(f"Running the fine-tuned pipeline on {len(images)} scales…"):
-                scale_res = _run_all_scales(images, detectors, reader, conf, mode)
-            cols = st.columns(len(scale_res))
-            for col, s in zip(cols, sorted(scale_res, reverse=True), strict=True):
-                entry = scale_res[s]
-                col.markdown(f"**Scale {s:g}**")
-                col.image(
-                    draw_detections(entry["image"], entry["dets"].detections, COLOR_FINETUNED),
-                    width=240,
-                    channels="BGR",
-                )
-                if entry["rec"] is not None:
-                    col.markdown(f"`{entry['rec'].text}`" + ("" if entry["rec"].text else " *(empty)*"))
-                    if sample is not None:
-                        col.caption(f"GT: `{sample.plate_text}`")
-                else:
-                    col.warning("No box at this scale.")
-            st.caption(
-                "Live fine-tuned YOLO11s + "
-                f"{engine} on the same photo at three scales"
-                + (" (dataset scale variants)." if sample is not None else " (live resizes of your upload).")
+    images = _scale_images(sample, image, uploaded is not None)
+    if not images:
+        st.warning("No scale variants available for this image.")
+    else:
+        with st.spinner(f"Running the fine-tuned pipeline on {len(images)} scales…"):
+            scale_res = _run_all_scales(images, detectors, reader, conf, mode)
+        ordered = sorted(scale_res, reverse=True)
+        cols = st.columns(ordered)
+        for col, s in zip(cols, ordered, strict=True):
+            entry = scale_res[s]
+            col.markdown(f"**Scale {s:g}**")
+            col.image(
+                draw_detections(entry["image"], entry["dets"].detections, COLOR_FINETUNED),
+                channels="BGR",
             )
+            if entry["rec"] is not None:
+                col.markdown(f"`{entry['rec'].text}`" + ("" if entry["rec"].text else " *(empty)*"))
+                if sample is not None:
+                    col.caption(f"GT: `{sample.plate_text}`")
+            else:
+                col.warning("No box at this scale.")
+        st.caption(
+            "Live fine-tuned YOLO11s + "
+            f"{engine} on the same photo at three scales"
+            + (" (dataset scale variants)." if sample is not None else " (live resizes of your upload).")
+        )
 
     st.subheader("5 — What happened")
     total = res["total_ms"]
