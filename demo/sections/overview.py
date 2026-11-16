@@ -10,23 +10,38 @@ def render():
         """
 # PlateLab — License Plate Detection & Recognition
 
-**Task.** Given a traffic photograph, (1) detect the license plate and (2)
-recognize its characters (Chinese province character, Latin letters, digits)
-on the CCPD2019 benchmark subset.
+**Task.** Given a traffic photograph, on the CCPD2019 benchmark subset:
+- detect the license plate
+- recognize its characters (Chinese province character, Latin letters, digits)
 
-**Research questions.** How much does fine-tuning the detector help? How does a
-plate-specific recognizer compare to general-purpose OCR? Where does the
-two-stage system fail — and why?
+**Research questions.**
+- How much does fine-tuning the detector help?
+- How does a plate-specific recognizer compare to general-purpose OCR?
+- Where does the two-stage system fail — and why?
 """
     )
 
+    st.subheader("Data preparation")
+    facts = results.DATASET_FACTS
+    splits = facts["splits"]
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Source photos", "5,000")
-    c2.metric("Image variants", "15,000")
-    c3.metric("Test split", "800 images")
-    c4.metric("Final plate F1 (test)", f"{results.RECOGNITION_TEST[-1]['f1']:.3f}")
+    c1.metric("Train", f"{splits['train']:,} photos")
+    c2.metric("Validation", f"{splits['val']:,} photos")
+    c3.metric("Test", f"{splits['test']:,} photos")
+    c4.metric("Scale variants", " / ".join(str(s) for s in facts["scales"]))
 
-    st.subheader("Two-stage architecture")
+    st.markdown(
+        """
+Sampling is stratified by plate height and tilt angle, with quotas proportional
+to stratum size, so the subset preserves the source distribution (plates span
+roughly 26-458 px tall at original scale; size buckets split near 83 and 112
+px). Each photo is rendered at three scales, giving 15,000 variants (10,500 /
+2,100 / 2,400 across train / validation / test). Splits are assigned before
+scale variation, so all variants of one photo stay in the same split.
+"""
+    )
+
+    st.subheader("Architecture")
     st.markdown(
         """
 <div class="diagram-flow" role="img"
@@ -43,31 +58,43 @@ two-stage system fail — and why?
 """,
         unsafe_allow_html=True,
     )
-    st.caption("Live demo shows the raw CRNN reading; the historical abstention policy is not applied.")
     st.markdown(
         """
 | Stage | Model | Input | Output |
 |---|---|---|---|
-| **1 — Detection** | YOLO11s (frozen or fine-tuned) | full photo, 640 px | boxes + confidences |
-| **2 — Recognition** | CRNN (CNN + BiLSTM + CTC, ~3 M params) | top-1 crop, 48×256 gray | text + per-char confidences |
+| Detection | YOLO11s (frozen or fine-tuned) | full photo, 640 px | boxes + confidences |
+| Recognition | CRNN (CNN + BiLSTM + CTC, ~3 M params) | top-1 crop, 48×256 gray | text + per-char confidences |
 
 The pipeline recognizes the **highest-confidence predicted box** per image.
 Two evaluation protocols are kept separate throughout:
 *ocr-only* (recognizer gets ground-truth crops) and *end-to-end*
 (recognizer gets the detector's own crop).
-""")
-
-    st.subheader("Headline results (test split, 800 images)")
-    st.markdown(
-        f"""
-- Detection: fine-tuned YOLO11s mAP@0.5 **{results.DETECTION_TEST['finetuned']['map50']:.4f}**
-  vs frozen **{results.DETECTION_TEST['frozen']['map50']:.4f}** (recall
-  {results.DETECTION_TEST['frozen']['recall']:.3f} → {results.DETECTION_TEST['finetuned']['recall']:.3f}).
-- Recognition: CRNN end-to-end character accuracy **{results.RECOGNITION_TEST[-1]['char_acc']:.4f}**
-  and **{results.RECOGNITION_TEST[-1]['exact']}/800** exact plates, vs
-  EasyOCR baseline **{results.RECOGNITION_TEST[0]['char_acc']:.4f}** / 0 exact.
-
-All numbers: {results.SOURCE}. Try the live pipeline in the
-**Pipeline Inspector** section.
 """
     )
+
+    st.subheader("Results")
+    st.caption(f"Test split, {splits['test']:,} original-scale images.")
+    frozen = results.DETECTION_TEST["frozen"]
+    finetuned = results.DETECTION_TEST["finetuned"]
+    n_test = f"{splits['test']:,}"
+
+    def row(config, det, rec):
+        det_cells = "— | —" if det is None else f"{det['map50']:.4f} | {det['f1']:.4f}"
+        return (
+            f"| {config} | {det_cells} | {rec['char_acc']:.4f} "
+            f"| {rec['exact']} / {n_test} |"
+        )
+
+    rows = [
+        row("Frozen YOLO11s + EasyOCR", frozen, results.RECOGNITION_TEST[1]),
+        row("CRNN, GT crops (OCR-only)", None, results.RECOGNITION_TEST[2]),
+        row("CRNN + frozen YOLO11s", frozen, results.RECOGNITION_TEST[3]),
+        row("CRNN + fine-tuned YOLO11s", finetuned, results.RECOGNITION_TEST[4]),
+    ]
+    table = (
+        "| Config | mAP@0.5 | F1 | Char. acc. | Exact plates |\n"
+        "|---|---|---|---|---|\n"
+        + "\n".join(rows)
+    )
+    st.markdown(table)
+    st.markdown("Try the live pipeline in the **Detection and Recognition** section.")

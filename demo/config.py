@@ -33,7 +33,7 @@ YOLO_CANONICAL = {
     "rect": False,
 }
 YOLO_CONF_FOR_AP = 0.001  # confidence floor used for mAP calculation
-YOLO_CONF_DEFAULT_UI = 0.25  # display-only default for the interactive UI
+YOLO_CONF_DEFAULT_UI = 0.5  # display-only default for the interactive UI
 
 CRNN_DEVICE = "cpu"
 CRNN_THREADS = 1

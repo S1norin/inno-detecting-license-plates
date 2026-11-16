@@ -11,7 +11,7 @@ canonical saved results from `docs/md/final_results.md`.
   recognizer beat general OCR? where does the system fail?
 - Point at the four metric cards and the stage table.
 
-## 2. Dataset Explorer (1–2 min)
+## 2. Dataset (1–2 min)
 
 - Browse a real test image: green box = ground truth, the metadata row
   (bucket, tilt, text) comes from `metadata.csv`.
@@ -23,10 +23,9 @@ canonical saved results from `docs/md/final_results.md`.
   `data/preprocessing.py`; Canny visibly destroys the glyphs, and the
   validation numbers agree (0.7558 / 0.7469 / 0.4575).
 
-## 3. Pipeline Inspector (2–3 min) — the centerpiece
+## 3. Detection and Recognition (2–3 min) — the centerpiece
 
-- Pick a sample (default: the documented failure `6f3c772c`), press
-  **Run inference**.
+- Pick a sample from the grid, press **Run inference**.
 - Show both detectors side by side: on a failure image the frozen model is
   empty while the fine-tuned one finds the plate.
 - The crop the CRNN sees is the detector's own top-1 box (not the GT crop) —

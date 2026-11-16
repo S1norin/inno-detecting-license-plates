@@ -113,6 +113,13 @@ class TestDataset:
         splits = {v.split for v in variants.values()}
         assert len(splits) == 1  # anti-leakage invariant
 
+    def test_thumbnail(self, frame):
+        from demo.dataset import thumbnail
+
+        thumb = thumbnail(frame["image_path"].iloc[0])
+        assert thumb.ndim == 3
+        assert thumb.shape[1] == 150
+
     def test_boxes_in_pixel_space(self, frame):
         for col in ("x1", "y1", "x2", "y2"):
             assert (frame[col] >= 0).all()
@@ -161,20 +168,6 @@ class TestViz:
 
 
 class TestDemoInteractions:
-    def test_plate_text_search_and_literal_query(self, monkeypatch):
-        import pandas as pd
-
-        from demo.sections import dataset_explorer, pipeline
-
-        frame = pd.DataFrame([
-            {"split": "test", "scale": 1.0, "image_path": "images/abc.jpg", "plate_text": "皖A12345"},
-        ])
-        for section, select in ((dataset_explorer, dataset_explorer._select_sample), (pipeline, pipeline._pick_sample)):
-            monkeypatch.setattr(section, "_frame", lambda: frame)
-            monkeypatch.setattr(section, "_row_to_sample", lambda row: row["plate_text"])
-            assert select("test", 1.0, "皖A123") == "皖A12345"
-            assert select("test", 1.0, "[") is None
-
     def test_failure_check_does_not_assert_unverified_false_positives(self):
         from demo.sections.failures import _check
         from demo.yolo import Detection

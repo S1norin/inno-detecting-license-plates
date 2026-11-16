@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
+import numpy as np
 import pandas as pd
+import streamlit as st
 
 from .config import DATASET_DIR, METADATA_CSV
 
@@ -112,6 +114,17 @@ def _row_to_sample(row) -> Sample:
 def load_image(path: Path):
     """Load a BGR uint8 image; None if unreadable."""
     return cv2.imread(str(path), cv2.IMREAD_COLOR)
+
+
+@st.cache_data
+def thumbnail(image_path: str) -> np.ndarray:
+    """Small preview of a dataset image; image_path is the metadata-relative path."""
+    image = load_image(DATASET_DIR / image_path)
+    if image is None:
+        return np.zeros((8, 8, 3), dtype=np.uint8)
+    h, w = image.shape[:2]
+    width = 150
+    return cv2.resize(image, (width, max(1, round(h * width / w))))
 
 
 def load_crop(sample: Sample):

@@ -5,6 +5,8 @@ Team computer-vision project: detecting and recognizing Chinese license plates, 
 - Detection: single-class YOLO bounding boxes (`license_plate`)
 - Recognition: OCR on ground-truth plate crops, with three preprocessing ablations (`none`, `gray_contrast`, `canny`)
 
+The interactive demo is available at <https://toledo.sinorin.ru>.
+
 ## Layout
 
 | Path | Contents |
@@ -13,20 +15,67 @@ Team computer-vision project: detecting and recognizing Chinese license plates, 
 | `data/dataset/` | Ready-to-train dataset: YOLO labels, metadata, OCR tables, dataset configs, plots |
 | `data/source_data/` | 5,000 unique CCPD2019 source images (Git LFS) plus selection records and checksums |
 | `baseline/` | Baselines and shared infrastructure: YOLO11s detection, EasyOCR recognition, combined evaluation, pinned environment and weights |
+| `demo/` | Interactive Streamlit demo: dataset explorer, historical results, live inference |
 | `openspec/` | Planning artifacts: capability specs in `specs/`, in-flight changes in `changes/`, completed ones in `changes/archive/` |
 | `docs/` | Project plan and course guidelines (PDF), schedule, progress report |
 
 Start with [`data/README.md`](data/README.md) for dataset format, split policy, limitations, and per-teammate usage notes.
 For baseline results and reproduction: [`baseline/detection/README.md`](baseline/detection/README.md), [`baseline/ocr/README.md`](baseline/ocr/README.md), [`baseline/evaluation/README.md`](baseline/evaluation/README.md).
 
-## OpenSpec
+## Running the demo
 
-Features and experiments are planned as OpenSpec changes: durable capability
-specs live in `openspec/specs/`, and each change (proposal, spec deltas,
-design, tasks) lives in `openspec/changes/` until it is archived. New work
-starts with `/openspec-propose`, is implemented from the change's tasks
-(`/openspec-apply-change`), and is archived after merge
-(`/openspec-archive-change`).
+The interactive demo is a Streamlit app in `demo/`: an Overview of the
+research, a Dataset browser, live detection + recognition on the real
+checkpoints (frozen and fine-tuned YOLO11s with CRNN or the EasyOCR
+baseline), historical Experiments, and Failure Analysis. The steps below are
+all that is needed on a fresh machine; [`demo/README.md`](demo/README.md) has
+extra notes for edge cases.
+
+1. Create the environment and install the demo dependencies (CPU PyTorch):
+
+   ```bash
+   uv venv --python 3.12 .venv
+   uv pip install --python .venv/bin/python --index-url https://download.pytorch.org/whl/cpu \
+     'torch==2.6.0' 'torchvision==0.21.0'
+   uv pip install --python .venv/bin/python \
+     'streamlit==1.52.2' 'ultralytics==8.3.162' 'numpy==2.1.3' \
+     'pandas==2.3.3' 'PyYAML==6.0.3' 'pytest==9.2.0' \
+     'nbformat==5.11.1' 'nbclient==0.11.0' ipykernel matplotlib tqdm
+   ```
+
+2. Fetch and verify the model checkpoints (stored in gitignored
+   `baseline/weights/`):
+
+   ```bash
+   .venv/bin/python -m baseline.common.weights fetch yolo11s-license-plate
+   .venv/bin/python -m baseline.common.weights fetch yolo11s-license-plate-finetuned
+   .venv/bin/python -m baseline.common.weights fetch crnn-full-training
+   .venv/bin/python -m baseline.common.weights verify yolo11s-license-plate
+   .venv/bin/python -m baseline.common.weights verify yolo11s-license-plate-finetuned
+   .venv/bin/python -m baseline.common.weights verify crnn-full-training
+   ```
+
+3. Start the app from the repository root (requires a complete
+   `data/dataset/`, see "Getting the data"):
+
+   ```bash
+   .venv/bin/python -m streamlit run demo/app.py \
+     --server.address 127.0.0.1 --server.port 8501 --server.headless true
+   ```
+
+   Open http://127.0.0.1:8501 in a browser; stop the server with Ctrl+C.
+   `127.0.0.1` is local-only — the app has no authentication, so do not bind
+   `0.0.0.0` or expose it publicly.
+
+Optional: the EasyOCR comparison engine needs
+`uv pip install --python .venv/bin/python 'easyocr==1.7.2'` plus its pinned
+offline weights in `baseline/weights/easyocr/` (see `demo/README.md`).
+Without it the app runs and shows an install hint in the Detection and
+Recognition section.
+
+Note: do not use `uv run` for the demo — `pyproject.toml` declares no runtime
+dependencies, so `uv` would sync an empty environment and wipe the demo
+packages from `.venv`. Call `.venv/bin/python` directly.
 
 ## Getting the data
 

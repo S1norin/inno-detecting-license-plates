@@ -8,17 +8,17 @@ notes.
 
 ## Installation for a human
 
-These instructions target Linux with Python 3.12, `uv` and Git LFS. The
-commands download packages, source images and model weights. Check available
-disk space and obtain permission before downloading. The prepared image and
-crop directories are gitignored and are not included in a normal clone.
+These instructions assume Python 3.12, `uv` and Git LFS (any OS; tested on
+Linux and macOS). The commands download packages, source images and model
+weights. Check available disk space and obtain permission before downloading.
+The prepared image and crop directories are gitignored and are not included in
+a normal clone.
 
-1. Clone the repository, enter it and check out the branch containing the demo:
+1. Clone the repository and enter it:
 
    ```bash
    git clone <repository-url>
    cd inno-detecting-license-plates
-   git checkout feat/streamlit-demo
    ```
 
 2. Create a Python 3.12 environment and install the demo dependencies:
@@ -60,8 +60,8 @@ crop directories are gitignored and are not included in a normal clone.
    uv pip install --python .venv/bin/python 'easyocr==1.7.2'
    ```
 
-   If easyocr is missing, the app still runs and the Pipeline Inspector shows
-   an install hint instead of EasyOCR results.
+   If easyocr is missing, the app still runs and the Detection and Recognition
+   section shows an install hint instead of EasyOCR results.
 
 4. Prepare the data. If an existing complete `data/dataset/` already contains
    `images/`, `crops_gt/` and `metadata.csv`, preserve it and skip regeneration.
@@ -114,8 +114,9 @@ crop directories are gitignored and are not included in a normal clone.
 
    The inference check loads real models and uses CPU and memory. The Failure
    Analysis page automatically runs both detectors when opened or changed;
-   Pipeline Inspector runs them when its button is pressed. Avoid these during
-   training or other heavy work on a resource-constrained machine.
+   Detection and Recognition runs them when **Run inference** is pressed.
+   Avoid these during training or other heavy work on a resource-constrained
+   machine.
 
 ## Instructions for a coding agent
 
