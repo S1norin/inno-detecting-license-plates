@@ -32,12 +32,12 @@ def render():
 
     st.markdown(
         """
-Sampling is stratified by plate size and tilt angle, with quotas proportional
-to stratum size, so the subset preserves the source distribution (height bins
-≈ 75 / 96 / 127 px, tilt ≈ 16 / 90 / 92). Each photo is rendered at three
-scales, giving 15,000 variants (10,500 / 2,100 / 2,400 across train /
-validation / test). Splits are assigned before scale variation, so all
-variants of one photo stay in the same split.
+Sampling is stratified by plate height and tilt angle, with quotas proportional
+to stratum size, so the subset preserves the source distribution (plates span
+roughly 26-458 px tall at original scale; size buckets split near 83 and 112
+px). Each photo is rendered at three scales, giving 15,000 variants (10,500 /
+2,100 / 2,400 across train / validation / test). Splits are assigned before
+scale variation, so all variants of one photo stay in the same split.
 """
     )
 

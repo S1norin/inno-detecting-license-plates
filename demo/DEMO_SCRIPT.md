@@ -11,7 +11,7 @@ canonical saved results from `docs/md/final_results.md`.
   recognizer beat general OCR? where does the system fail?
 - Point at the four metric cards and the stage table.
 
-## 2. Dataset Explorer (1–2 min)
+## 2. Dataset (1–2 min)
 
 - Browse a real test image: green box = ground truth, the metadata row
   (bucket, tilt, text) comes from `metadata.csv`.

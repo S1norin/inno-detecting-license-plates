@@ -10,6 +10,7 @@ import streamlit as st
 
 from data.preprocessing import preprocess_plate
 
+from ..config import YOLO_CONF_DEFAULT_UI
 from ..crnn import CRNNRecognizer
 from ..dataset import Sample, _row_to_sample, load_image, load_metadata, thumbnail, variants_of
 from ..easy_ocr import EasyOCRReader
@@ -206,7 +207,7 @@ recognizer), each reading the crops of both detectors.
 
     st.subheader("2 — Detection")
     col_d, col_e, col_f, col_g = st.columns([3, 1, 2, 2])
-    conf = col_d.slider("Detection confidence threshold", 0.01, 0.9, 0.5, 0.01)
+    conf = col_d.slider("Detection confidence threshold", 0.01, 0.9, YOLO_CONF_DEFAULT_UI, 0.01)
     engine = col_e.selectbox("OCR engine", list(ENGINES), index=0,
                              help="EasyOCR: general-purpose baseline OCR. CRNN: the plate-specific recognizer.")
     mode = col_f.selectbox("OCR preprocessing (experimental mode)",
